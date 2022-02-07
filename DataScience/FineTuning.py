@@ -160,3 +160,5 @@ if __name__ == '__main__':
 
     trainer.train()
 
+    torch.save(model, '../Data/model.pt')
+
