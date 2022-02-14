@@ -5,7 +5,6 @@ Functions for cleaning and prepping the data for training
 
 import os
 import re
-import json
 from librosa.core import load
 import pandas as pd
 
@@ -43,8 +42,8 @@ def convertToDataframe(transcript_dir: str = '../Data/Transcripts/', audio_dir: 
             continue
 
         path = os.path.join(transcript_dir, filename)
-        if os.path.getsize(path) > 1000:  # skip files over 10KB
-            continue
+        # if os.path.getsize(path) > 1000:  # skip files over 10KB
+        #     continue
 
         data = {'file': filename}
         with open(path) as fp:

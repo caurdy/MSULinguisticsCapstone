@@ -158,7 +158,6 @@ if __name__ == '__main__':
         tokenizer=processor.feature_extractor,
     )
 
-    trainer.train()
-
-    torch.save(model, '../Data/model.pt')
+    #trainer.train()
+    trainer.save_model('../Data/model')
 
