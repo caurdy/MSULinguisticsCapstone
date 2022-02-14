@@ -10,7 +10,7 @@ emb_scores = Model.from_pretrained("pyannote/embedding")
 
 pipeline = pipelines.SpeakerDiarization(segmentation=sad_scores,
                                         embedding=emb_scores,
-                                        embedding_batch_size= 32)
+                                        embedding_batch_size = 32)
 
 """
     onset=0.6: mark region as active when probability goes above 0.6
@@ -29,9 +29,10 @@ initial_params = {
                  }
 pipeline.instantiate(initial_params)
 
+# input data
 diarization_result = pipeline("Data/test.wav")
 
-
+# write into the rttm file
 with open('test.rttm', 'w') as file:
     diarization_result.write_rttm(file)
 

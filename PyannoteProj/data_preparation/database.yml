@@ -1,32 +1,22 @@
 Databases:
-   AMI: ./amicorpus/*/audio/{uri}.wav
-   MUSAN: ./musan/{uri}.wav
-   DIA: ./wav/{uri}.wav
+  # tell pyannote.database where to find AMI wav files.
+  # {uri} is a placeholder for the session name (eg. ES2004c).
+  # you might need to update this line to fit your own setup.
+  AMI: amicorpus/{uri}/audio/{uri}.Mix-Headset.wav
 
 Protocols:
-   AMI:
-      SpeakerDiarization:
-         MixHeadset:
-           train:
-              uri: ./AMI/MixHeadset.train.lst
-              annotation: ./AMI/MixHeadset.train.rttm
-              annotated: ./AMI/MixHeadset.train.uem
-           development:
-              uri: ./AMI/MixHeadset.development.lst
-              annotation: ./AMI/MixHeadset.development.rttm
-              annotated: ./AMI/MixHeadset.development.uem
-           test:
-              uri: ./AMI/MixHeadset.test.lst
-              annotation: ./AMI/MixHeadset.test.rttm
-              annotated: ./AMI/MixHeadset.test.uem
-   MUSAN:
-      Collection:
-         BackgroundNoise:
-            uri: ./MUSAN/background_noise.txt
-         Noise:
-            uri: ./MUSAN/noise.txt
-         Music:
-            uri: ./MUSAN/music.txt
-         Speech:
-            uri: ./MUSAN/speech.txt
-
+  AMI:
+    SpeakerDiarization:
+      only_words:
+        train:
+            uri: ../lists/train.meetings.txt
+            annotation: ../only_words/rttms/train/{uri}.rttm
+            annotated: ../uems/train/{uri}.uem
+        development:
+            uri: ../lists/dev.meetings.txt
+            annotation: ../only_words/rttms/dev/{uri}.rttm
+            annotated: ../uems/dev/{uri}.uem
+        test:
+            uri: ../lists/test.meetings.txt
+            annotation: ../only_words/rttms/test/{uri}.rttm
+            annotated: ../uems/test/{uri}.uem
