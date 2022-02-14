@@ -160,5 +160,7 @@ if __name__ == '__main__':
 
     trainer.train()
 
-    torch.save(model, '../Data/model.pt')
+    model.save_pretrained('../Data/Models/')
+    tokenizer.save_pretrained('../Data/Models/')
+
 
