@@ -7,23 +7,27 @@ import librosa
 import torch
 from datasets import load_metric
 import jiwer
-from transformers import Wav2Vec2ForCTC, Wav2Vec2CTCTokenizer, Wav2Vec2Tokenizer, Wav2Vec2Model
+from transformers import Wav2Vec2ForCTC, Wav2Vec2CTCTokenizer, Wav2Vec2FeatureExtractor, Wav2Vec2Processor
 from DataEngineering.CleanTranscript import cleanFile
 
 
-def getTranscript(audio: str):
-    tokenizer = Wav2Vec2Tokenizer.from_pretrained('../Data/Models/')
+def getTranscript(audio):
+    #tokenizer = Wav2Vec2CTCTokenizer.from_pretrained('../Data/Models/')
     #tokenizer = Wav2Vec2CTCTokenizer('../Data/vocab.json', unk_token='[UNK]',
     #                                 pad_token='[PAD]', word_delimiter_token='|')
+    tokenizer = Wav2Vec2CTCTokenizer.from_pretrained("facebook/wav2vec2-base-960h")
+    #model = Wav2Vec2ForCTC.from_pretrained("../Data/Models/")
+    model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-base-960h")
 
-    model = Wav2Vec2ForCTC.from_pretrained("../Data/Models/")
+    feature_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0,
+                                                 do_normalize=True, return_attention_mask=False)
+    processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
 
-    input_audio, _ = librosa.load(audio, sr=16000)
 
-    input_values = tokenizer(input_audio, return_tensors="pt").input_values
+    input_values = processor(torch.tensor(audio), sampling_rate=16000, return_tensors="pt", padding=True).input_values
     logits = model(input_values).logits
     predicted_ids = torch.argmax(logits, dim=-1)
-    transcription = tokenizer.batch_decode(predicted_ids)[0]
+    transcription = processor.batch_decode(predicted_ids)[0]
 
     return transcription
 
@@ -55,7 +59,9 @@ if __name__ == "__main__":
     for file, label in files_dict.items():
         results_file.write(f"File {i}\n\n")
         i += 1
-        transcript = getTranscript(file)
+
+        input_audio, _ = librosa.load(file, sr=16000)
+        transcript = getTranscript(input_audio)
         results_file.write(f"Prediction: {transcript}\n")
         target, wer = testWER(transcript, label)
         results_file.write(f"Target:     {target}\n")
