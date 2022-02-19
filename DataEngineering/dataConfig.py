@@ -7,6 +7,7 @@ import os
 import re
 from librosa.core import load
 import pandas as pd
+import datasets
 
 # ToDo
 #  Add parameter for file size convertToDataframe
@@ -33,7 +34,6 @@ def convertToDataframe(transcript_dir: str = '../Data/Transcripts/', audio_dir: 
     :param audio_dir: directory holding audio files
     :return: Pandas Dataframe
     """
-
     df = pd.DataFrame(columns=['file', 'text', 'audio', 'sampling_rate'])
 
     # Read transcripts into dataframe
@@ -42,8 +42,8 @@ def convertToDataframe(transcript_dir: str = '../Data/Transcripts/', audio_dir: 
             continue
 
         path = os.path.join(transcript_dir, filename)
-        # if os.path.getsize(path) > 1000:  # skip files over 10KB
-        #     continue
+        if os.path.getsize(path) > 1000:  # skip files over 10KB
+            continue
 
         data = {'file': filename}
         with open(path) as fp:
@@ -63,6 +63,17 @@ def convertToDataframe(transcript_dir: str = '../Data/Transcripts/', audio_dir: 
         df.loc[len(df.index)] = data
 
     return df
+
+
+def convertToDataset(transcript_dir: str = '../Data/Transcripts/', audio_dir: str = '../Data/wav/',) -> datasets.Dataset:
+    """
+    Convert a directory of transcripts and audios to a HuggingFace Dataset
+    """
+    dataset = datasets.Dataset()
+    dataset.features = {'audio', datasets.features.audio}
+    print(dataset)
+
+    return dataset
 
 
 def remove_special_characters(batch):
@@ -91,8 +102,26 @@ def createVocabulary(series: pd.Series) -> dict[str: int]:
     return vocab_dict
 
 
+def prepare_dataset(batch):
+    audio = batch["audio"]
+    processor = None
+    # batched output is "un-batched" to ensure mapping is correct
+    # print(processor(audio, sampling_rate=batch['sampling_rate']).input_values[0])
+    batch["input_values"] = processor(audio, sampling_rate=batch['sampling_rate']).input_values[0]
+    batch["input_length"] = len(batch["input_values"])
+
+    with processor.as_target_processor():
+        batch["labels"] = processor(batch["text"]).input_ids
+    return batch
+
+
 if __name__ == '__main__':
-    df = convertToDataframe()
-    df['text'] = df['text'].apply(remove_special_characters)
+    #processor = None
+    #df = convertToDataframe()
+    #df['text'] = df['text'].apply(remove_special_characters)
     # vocab = createVocabulary(df['text'])
-    df.to_json('../Data/corrected.json')
+    # prepare dataset
+    # remove audio from dataset
+    # df.to_json('../Data/corrected.json')
+
+    convertToDataset()
