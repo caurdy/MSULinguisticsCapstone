@@ -1,7 +1,7 @@
 from pyannote.audio import Model, Inference
 import sys
 import time
-sys.path.append('/home/eason/Project/MSULinguisticsCapstone/PyannoteProj/data_preparation')
+sys.path.append('./MSULinguisticsCapstone/PyannoteProj/data_preparation')
 from database_loader import DataLoader
 from copy import deepcopy
 from pyannote.audio.tasks import Segmentation
@@ -10,6 +10,7 @@ from pyannote.audio.utils.signal import binarize
 
 from pyannote.audio.pipelines.utils import get_devices
 from pyannote.audio.utils.metric import DiscreteDiarizationErrorRate
+import torch
 
 import pytorch_lightning as pl
 
@@ -52,8 +53,14 @@ if __name__ == '__main__':
     finetuned = deepcopy(pretrained)
     finetuned.task = seg_task
 
-    trainer = pl.Trainer(strategy="dp", accelerator="gpu", devices="auto", max_epochs=1)
+    trainer = pl.Trainer(strategy="dp", accelerator="gpu", devices="auto", max_epochs=3)
     trainer.fit(finetuned)
 
     der_finetuned = evaluation(model=finetuned, protocol=ami, subset="test")
     print(f"Local DER (finetuned) = {der_finetuned * 100:.1f}%")
+
+    if der_finetuned * 100 < der_pretrained * 100:
+        print("the model performance is greater than before, Saved!")
+        torch.save(der_finetuned, "./saved_model/segmentation/new_segmentation_model.pt")
+    else:
+        print("Not too much performance, drop out!")
