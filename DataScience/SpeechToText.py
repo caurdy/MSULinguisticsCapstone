@@ -1,24 +1,19 @@
 """
 ASR predictions using non fine-tuned Wav2Vec2 model
 """
-from typing import Dict, Tuple
-
-import soundfile as sf
+from typing import Tuple
 import librosa
 import torch
-from datasets import load_metric
 import jiwer
-from transformers import Wav2Vec2ForCTC, Wav2Vec2CTCTokenizer, Wav2Vec2Tokenizer, Wav2Vec2Model, Wav2Vec2Processor
+from transformers import Wav2Vec2ForCTC, Wav2Vec2Tokenizer, Wav2Vec2Processor
 from DataEngineering.CleanTranscript import cleanFile
-from transformers import AutoProcessor, AutoModelForCTC
-import textract
 from rpunct import RestorePuncts
 import pandas as pd
 import nemo.collections.asr as nemo_asr
 import numpy as np
 
 ASR_MODEL = nemo_asr.models.EncDecCTCModel.from_pretrained(model_name='QuartzNet15x5Base-En', strict=False)
-RPUNCT = RestorePuncts()    # Had to manually set use_cuda to false in source code
+RPUNCT = RestorePuncts()  # Had to manually set use_cuda to false in source code
 
 
 def getTranscript(audio: str):
@@ -81,9 +76,9 @@ def produceTimeAlignedTranscript(audio_file: str, speaker_file: str) -> None:
 
     # load audio signal with librosa
     signal, sample_rate = librosa.load(audio_file, sr=16000)
-    transcript = ASR_MODEL.transcribe(paths2audio_files=[audio_file])[0] # get txt transcript
+    transcript = ASR_MODEL.transcribe(paths2audio_files=[audio_file])[0]  # get txt transcript
     transcript = RPUNCT.punctuate(transcript)
-    logits = ASR_MODEL.transcribe([audio_file], logprobs=True)[0] # get vector of probabilities for word predictions
+    logits = ASR_MODEL.transcribe([audio_file], logprobs=True)[0]  # get vector of probabilities for word predictions
     probs = softmax(logits)
     # 20ms is duration of a timestep at output of the model
     time_stride = 0.02
@@ -132,9 +127,9 @@ def produceTimeAlignedTranscript(audio_file: str, speaker_file: str) -> None:
         for word_begin, word_end, word in timestampList:
             if start > word_begin:  # this word is before this speaker, continue
                 continue
-            elif start + duration < word_begin: # this word is after the speaker, break
+            elif start + duration < word_begin:  # this word is after the speaker, break
                 break
-            sentence.append(word)   # this word is in the sentence
+            sentence.append(word)  # this word is in the sentence
         sentences.append(" ".join(sentence))
     df = df.assign(content=sentences)
     df.to_csv('../Data/test.csv')
@@ -169,4 +164,4 @@ def main():
 
 
 if __name__ == "__main__":
-    produceTimeAlignedTranscript('../Data/test.wav', '../Data/sample.rttm')
+    produceTimeAlignedTranscript('../Data/MCD-00286.wav', '../Data/MCD-00286.rttm')
