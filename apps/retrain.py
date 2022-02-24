@@ -9,7 +9,7 @@ current_model_diarization = "Model-1-DIA"
 current_model_asr = "Model-1-ASR"
 
 layout = html.Div([
-    html.H1("Select or Upload a Model"),
+    html.H1("Retraining the Models"),
     # dcc.Upload(html.Button('Upload File'), id="upload-file"),
 
     html.Hr(),
@@ -105,7 +105,7 @@ def parse_contents(contents, filename, mod1, mod2):
                 html.H5(f"File invalid. Please upload a .uem file or select a pretrained Model")
             ])
         return html.Div([
-            html.H5(f"Current Diarization model is being trained on: {filename}"),
+            html.H5(f"Current Diarization model is being trained on: {filename[0]}"),
         ])
     else:
         changed_id = [p['prop_id'] for p in callback_context.triggered][0]
@@ -138,16 +138,3 @@ def displayClick(mod1, mod2):
     else:
         msg = 'None of the buttons have been clicked yet'
     return html.Div(msg)
-
-# @app.callback(Output())
-#
-# def update_output(n_clicks, value):
-#     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-#
-#     # return 'The input value was "{}" and the button has been clicked {} times'.format(
-#     #     value,
-#     #     n_clicks
-#     # )
-#     current_model = "Model-2.json"
-#     return layout
-# deal with n_clicks on the button, if the button is pushed change name to another value
