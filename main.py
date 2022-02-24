@@ -48,7 +48,7 @@ sidebar = html.Div(
                 # Unnecessary but currently hold the space (They should be invisible)
                 dbc.NavLink("Upload", href="/", active="exact"),
                 dbc.NavLink("Train", href="/page-1", active="exact"),
-                dbc.NavLink("Transciptions", href="/page-2", active="exact"),
+                dbc.NavLink("Transcriptions", href="/page-2", active="exact"),
             ],
             horizontal=True,
             pills=True,
