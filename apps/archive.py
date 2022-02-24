@@ -147,9 +147,8 @@ def displayClick(n_clicks):
                             'borderStyle': 'dashed',
                             'borderWidth': '2px',
                             'textAlign': 'center'}),
-            html.A(html.Button('Show Transcript', id="display1"), href="/", style={'display': 'inline-block'}),
-        ], style={'display': 'inline-block', 'margin': '10px', 'width': '120%', 'borderStyle': 'dashed',
-                  'borderWidth': '1px', 'padding': '1rem'}),
+            html.A(html.Button('Show Transcript', id="display1", n_clicks=1), style={'display': 'inline-block'}),
+        ]),
 
         html.Hr(),
         html.Div(style={'padding': '2rem'}),
@@ -183,29 +182,28 @@ def displayClick(n_clicks):
         html.Hr(),  # horizontal line
     ])
     else:
-        return layout
-        # return html.Div([
-        #     html.Div(html.H5(datetime.datetime.now().strftime('%m/%d/%Y')),
-        #              style={'display': 'inline-block',
-        #                     'width': '17%',
-        #                     'borderStyle': 'dashed',
-        #                     'borderWidth': '2px',
-        #                     'textAlign': 'center'}),
-        #     html.Div(html.H5("audio_file_02212022.wav"),
-        #              style={'display': 'inline-block',
-        #                     'width': '34%',
-        #                     'borderStyle': 'dashed',
-        #                     'borderWidth': '2px',
-        #                     'textAlign': 'center'}),
-        #     html.Div(html.H5("transcript_02212022.csv"),
-        #              style={'display': 'inline-block',
-        #                     'width': '33%',
-        #                     'borderStyle': 'dashed',
-        #                     'borderWidth': '2px',
-        #                     'textAlign': 'center'}),
-        #     html.A(html.Button('Show Transcript', id="display1", n_clicks=n_clicks+1), href="", style={'display': 'inline-block'}),
-        # ], style={'display': 'inline-block', 'margin': '10px', 'width': '120%', 'borderStyle': 'dashed',
-        #           'borderWidth': '1px', 'padding': '1rem'})
+        # return layout
+        return html.Div([
+            html.Div(html.H5(datetime.datetime.now().strftime('%m/%d/%Y')),
+                     style={'display': 'inline-block',
+                            'width': '17%',
+                            'borderStyle': 'dashed',
+                            'borderWidth': '2px',
+                            'textAlign': 'center'}),
+            html.Div(html.H5("audio_file_02212022.wav"),
+                     style={'display': 'inline-block',
+                            'width': '34%',
+                            'borderStyle': 'dashed',
+                            'borderWidth': '2px',
+                            'textAlign': 'center'}),
+            html.Div(html.H5("transcript_02212022.csv"),
+                     style={'display': 'inline-block',
+                            'width': '33%',
+                            'borderStyle': 'dashed',
+                            'borderWidth': '2px',
+                            'textAlign': 'center'}),
+            html.A(html.Button('Show Transcript', id="display1", n_clicks=0), style={'display': 'inline-block'}),
+        ])
     # elif 'display2' in changed_id:
     #     msg = 'Button 2 was most recently clicked'
     # elif 'display3' in changed_id:
