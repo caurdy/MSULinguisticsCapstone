@@ -4,6 +4,10 @@ reference: https://github.com/NVIDIA/NeMo/blob/stable/tutorials/asr/Offline_ASR.
 
 to install proper packages for Nemo see https://github.com/NVIDIA/NeMo
 can subsitute apt-get w/ 'pip install ffmpeg' and 'pip install SoundFile'
+
+Nemo_Asr requires torch~=1.8.1 however, Pyannote requires torch>=1.9
+However, it seems nemo is okay to run on a newer version of torch (at least for this script)
+Currently im running torch=1.10.2
 """
 import nemo.collections.asr as nemo_asr
 import numpy as np
@@ -15,8 +19,8 @@ from plotly import graph_objects as go
 asr_model = nemo_asr.models.EncDecCTCModel.from_pretrained(model_name='QuartzNet15x5Base-En', strict=False)
 
 # Download audio sample which we'll try
-AUDIO_FILENAME = '../Data/wav/0a4a616c-7acc-4082-96ec-edce5d698e01.wav'
-
+AUDIO_FILENAME = '../Data/wav/f86f93f2-d49a-456d-96c5-0b3858605736.wav'
+#"C:\Users\caurd\Desktop\MSU\Spring '22\CSE 498\CapstoneCode\Data\wav\f86f93f2-d49a-456d-96c5-0b3858605736.wav"
 
 def displaySignalandSpectrum(audio_file: str) -> None:
     """
@@ -105,26 +109,26 @@ time_stride = 0.02
 labels = list(asr_model.decoder.vocabulary) + ['blank']
 labels[0] = 'space'
 
-# # plot probability distribution over characters for each timestep
-# fig_probs = go.Figure(
-#     go.Heatmap(z=probs.transpose(),
-#                colorscale=[
-#                    [0, 'rgb(30,62,62)'],
-#                    [1, 'rgb(30,255,30)'],
-#                ],
-#                y=labels,
-#                dx=time_stride,
-#                name='Probs',
-#                hovertemplate='Time: %{x:.2f} s<br>Character: %{y}<br>Probability: %{z:.2f}<extra></extra>'),
-#     layout={
-#         'height': 300,
-#         'xaxis': {'title': 'Time, s'},
-#         'yaxis': {'title': 'Characters'},
-#         'title': 'Character Probabilities',
-#         'margin': dict(l=0, r=0, t=40, b=0, pad=0),
-#     }
-# )
-# fig_probs.show()
+# plot probability distribution over characters for each timestep
+fig_probs = go.Figure(
+    go.Heatmap(z=probs.transpose(),
+               colorscale=[
+                   [0, 'rgb(30,62,62)'],
+                   [1, 'rgb(30,255,30)'],
+               ],
+               y=labels,
+               dx=time_stride,
+               name='Probs',
+               hovertemplate='Time: %{x:.2f} s<br>Character: %{y}<br>Probability: %{z:.2f}<extra></extra>'),
+    layout={
+        'height': 300,
+        'xaxis': {'title': 'Time, s'},
+        'yaxis': {'title': 'Characters'},
+        'title': 'Character Probabilities',
+        'margin': dict(l=0, r=0, t=40, b=0, pad=0),
+    }
+)
+fig_probs.show()
 
 # get timestamps for space symbols
 spaces = []
