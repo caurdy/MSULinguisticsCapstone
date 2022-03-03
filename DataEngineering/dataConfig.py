@@ -5,9 +5,10 @@ Functions for cleaning and prepping the data for training
 
 import os
 import re
-from librosa.core import load
+from librosa.core import load, get_duration
 import pandas as pd
 import datasets
+from typing import Dict, TypeVar
 
 # ToDo
 #  Add parameter for file size convertToDataframe
@@ -18,7 +19,8 @@ import datasets
 #   what about +,-,/,*?
 #
 
-chars_to_ignore_regex = r'[\d\,\?\.\!\-\;\:\"\}\{\©\[\]\)\(\+\-\*\¼\%]'
+chars_to_ignore_regex = r'[\?\!\.\,\d\-\;\:\"\}\{\©\[\]\)\(\+\-\*\¼\%]'
+chars_to_replace_with_space_regex = r'[\?\!\.\,]'
 
 
 def convertToDataframe(transcript_dir: str = '../Data/Transcripts/', audio_dir: str = '../Data/wav/') -> pd.DataFrame():
@@ -65,7 +67,8 @@ def convertToDataframe(transcript_dir: str = '../Data/Transcripts/', audio_dir: 
     return df
 
 
-def convertToDataset(transcript_dir: str = '../Data/Transcripts/', audio_dir: str = '../Data/wav/',) -> datasets.Dataset:
+def convertToDataset(transcript_dir: str = '../Data/Transcripts/',
+                     audio_dir: str = '../Data/wav/', ) -> datasets.Dataset:
     """
     Convert a directory of transcripts and audios to a HuggingFace Dataset
     """
@@ -86,7 +89,7 @@ def extract_all_chars(batch):
     return {"vocab": [vocab], "all_text": [all_text]}
 
 
-def createVocabulary(series: pd.Series) -> dict[str: int]:
+def createVocabulary(series: pd.Series(str)) -> Dict[str, int]:
     text_list = series.tolist()
     textBlob = " ".join(text_list)
     vocabList = set(textBlob)
@@ -115,13 +118,83 @@ def prepare_dataset(batch):
     return batch
 
 
-if __name__ == '__main__':
-    #processor = None
-    #df = convertToDataframe()
-    #df['text'] = df['text'].apply(remove_special_characters)
-    # vocab = createVocabulary(df['text'])
+def convertDataToNemoManifest(transcript_dir: str = '../Data/Transcripts/', audio_dir: str = '../Data/wav/',
+                              output_directory: str = '../Data/', train_size: float = None,
+                              file_size_limit: int = None) -> None:
+    """
+    Ref: https://docs.nvidia.com/deeplearning/nemo/user-guide/docs/en/main/asr/datasets.html#preparing-custom-asr-data
+    Takes in two paths to directories, one containing audio .wav files and the other transcript .txt files
+    Converts directories to Manifest.json files where each line of the manifest follows the format:
+        {"audio_filepath": "/path/to/audio.wav", "text": "the transcription of the utterance", "duration": 23.147}
+    These manifest files are the common format for datasets serving Nemo_asr models
+    This function will create two manifest files if train_size is specified, one for training and one for testing
+    and write them out to output_directory
+    If train_size is None, all data will be written to manifest_train.json
+        train_size percentage will divide train/test based on duration of audio files (NOT on count)
+    If file_size_limit is None, all files will be used.
+    NOTE: The training and audio files must have the same name and only differ by a -corrected.txt tag (for transcripts)
+            e.x. 'audio1.wav' corresponds to 'audio1-corrected.txt'
+          Any transcripts filenames not containing a '-corrected' tag will be ignored
+    :param file_size_limit: Limit of filesize to include in dataset, in MB for transcript (.txt) files
+    :param output_directory: Directory to write manifest_train.json and manifest_test.json to
+    :param transcript_dir: Directory containing .txt transcripts
+    :param audio_dir: Directory containing audio .wav files
+    :param train_size: Fraction of audio data to put in training manifest
+    """
+    df_train = pd.DataFrame(columns=['audio_filepath', 'text', 'duration'])
+    df_test = pd.DataFrame(columns=['audio_filepath', 'text', 'duration'])
+    # Read transcripts into dataframe
+    for filename in os.listdir(transcript_dir):
+        if '-corrected' not in filename:    # make usre the files
+            continue
+
+        path = os.path.join(transcript_dir, filename)
+        if file_size_limit and os.path.getsize(path) > file_size_limit:  # skip files
+            continue
+
+        data = {}
+        with open(path) as fp:
+            fp.readline()  # skip past header
+            transcript = ""
+            for line in fp.readlines():
+                transcript += line.split('\t')[-1].replace('\n', ' ')  # get the last split assumed to be the text
+            transcript = " " + re.sub(chars_to_ignore_regex, '', transcript).lower() + " "  # clean transcript
+            data['text'] = transcript
+
+        audio_filename = filename.replace('-corrected', '')
+        audio_filename = audio_filename.split('.')[0] + '.wav'
+        audio_path = os.path.join(audio_dir, audio_filename)
+        data['audio_filepath'] = os.path.abspath(audio_path)
+        duration = round(get_duration(load(audio_path, sr=16000)[0]), 5)
+        data['duration'] = duration
+        df_train.loc[len(df_train.index)] = data
+
+    if train_size:
+        test_size = df_train['duration'].sum() * (1 - train_size)
+        duration = 0
+        # Allocating examples to test_size
+        for i, row in df_train.iterrows():
+            duration += row['duration']
+            df_test.loc[len(df_test.index)] = row
+            df_train.drop(i, axis=0, inplace=True)
+            if duration >= test_size:
+                break
+        df_test.to_json(os.path.join(output_directory, 'manifest_test.json'), orient='records')
+    df_train.to_json(os.path.join(output_directory, 'manifest_train.json'), orient='records')
+
+
+def createCleanedDataFrame():
+    """
+    Probably not working, supposed to create a dataframe and then clean the text in it for training ASR
+    """
+    processor = None
+    df = convertToDataframe()
+    df['text'] = df['text'].apply(remove_special_characters)
+    vocab = createVocabulary(df['text'])
     # prepare dataset
     # remove audio from dataset
-    # df.to_json('../Data/corrected.json')
+    df.to_json('../Data/corrected.json')
 
-    convertToDataset()
+
+if __name__ == '__main__':
+    convertDataToNemoManifest(train_size=0.80)
