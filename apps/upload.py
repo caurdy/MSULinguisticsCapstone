@@ -4,7 +4,7 @@ import io
 
 import dash
 from dash.dependencies import Input, Output, State
-from dash import dcc, html, dash_table
+from dash import dcc, html, dash_table, callback_context
 import os
 
 import pandas as pd
@@ -15,45 +15,70 @@ from Combine.CombineFeatures import combineFeatures
 
 # app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
+transcript = ""
+
 layout = html.Div([
+    # give id UpButt
     dcc.Upload(
         id='upload-data',
         children=html.Div([
-            'Drag and Drop or ',
-            html.A('Select Files'),
+            html.Button(id="UpButt", children=[
+                'Drag and Drop or ',
+                html.A('Select File'), ], n_clicks=0,
+                        style={
+                            'width': '100%',
+                            'height': '60px',
+                            'lineHeight': '60px',
+                            'borderWidth': '1px',
+                            'borderStyle': 'dashed',
+                            'borderRadius': '5px',
+                            'textAlign': 'center',
+                            'margin': '10px',
+                            'margin-left': '300px',
+                        }, )
 
         ]),
-        style={
-            'width': '100%',
-            'height': '60px',
-            'lineHeight': '60px',
-            'borderWidth': '1px',
-            'borderStyle': 'dashed',
-            'borderRadius': '5px',
-            'textAlign': 'center',
-            'margin': '10px',
-            'margin-left': '300px',
-        },
+
         # Allow multiple files to be uploaded
-        multiple=True
+        multiple=False
     ),
+    # ), n_clicks=0,
+    #             style={
+    #                 'width': '100%',
+    #                 'height': '60px',
+    #                 'lineHeight': '60px',
+    #                 'borderWidth': '1px',
+    #                 'borderStyle': 'dashed',
+    #                 'borderRadius': '5px',
+    #                 'textAlign': 'center',
+    #                 'margin': '10px',
+    #                 'margin-left': '300px',
+    #             },
+    #             ),
     html.Div(id='output-div', children=[]),
     html.Div(id='output-data-upload', children=[]),
 ])
 
+
 @app.callback(Output('output-data-upload', 'children'),
               Input('upload-data', 'contents'),
+              Input('UpButt', 'n_clicks'),
               State('upload-data', 'filename'),
               State('upload-data', 'last_modified'))
-
-def display_output(list_of_contents, list_of_names, list_of_dates):
+def display_output(list_of_contents, n_clicks, list_of_names, list_of_dates):
+    changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+    # print("ID: ", changed_id)
     if list_of_contents is not None:
         children = [
-            parse_contents(c, n, d) for c, n, d in
-            zip(list_of_contents, list_of_names, list_of_dates)]
+
+            parse_contents(list_of_contents, list_of_names, list_of_dates, n_clicks)
+        ]
+        # parse_contents(c, n, d, count) for c, n, d in
+        # zip(list_of_contents, list_of_names, list_of_dates)]
         return children
 
-def parse_contents(contents, filename, date):
+
+def parse_contents(contents, filename, date, cnt):
     if contents is not None:
         content_type, content_string = contents.split(',')
         # change this to a .wav use pipeline to get. test
@@ -72,9 +97,10 @@ def parse_contents(contents, filename, date):
                 #     "assets/audio"),
                 # Attempt to make the file playable
 
-                combineFeatures(f'assets/{filename}', "assets/transcript")
-                df = pd.read_csv("assets/transcript.csv")
+                combineFeatures(f'assets/{filename}', f'assets/transcript_{cnt}')
+                df = pd.read_csv(f'assets/transcript_{cnt}.csv')
                 # df = pd.read_csv("assets/random.csv")
+                # print("COUNT: ", cnt)
                 # os.remove("assets/transcript.csv")
                 # html.Audio(id="audio", src='assets/0a15bb21-3993-4496-8672-f3be45769356.wav', controls=True, autoPlay=False)
         except Exception as e:
@@ -100,7 +126,7 @@ def parse_contents(contents, filename, date):
                     'whiteSpace': 'pre-wrap',
                     'wordBreak': 'break-all'
                 })
-            ], id = 'transcript')
+            ], id='transcript')
         else:
             return html.Div([
                 html.H5(filename),
@@ -127,9 +153,9 @@ def parse_contents(contents, filename, date):
                     style_cell={'textAlign': 'left'},
                     # style_data={'whiteSpace': 'normal',
                     #             'minWidth': '180px', 'width': '180px', 'maxWidth': '180px'},
-                        # 'max-height': '30px', 'min-height': '30px', 'height': '30px',
-                        # 'lineHeight': '15px',
-                        #         },
+                    # 'max-height': '30px', 'min-height': '30px', 'height': '30px',
+                    # 'lineHeight': '15px',
+                    #         },
                     style_table={'textAlign': 'center', 'width': '1050px'},
                 ),
 
@@ -142,7 +168,7 @@ def parse_contents(contents, filename, date):
                 #     'wordBreak': 'break-all',
                 # })
             ],
-            style={'margin-left': '300px'}
+                style={'margin-left': '300px'}
             )
 
 # @app.callback(Output('stored-data', 'data'),
