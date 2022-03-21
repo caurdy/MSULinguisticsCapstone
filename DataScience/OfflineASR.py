@@ -17,10 +17,8 @@ from plotly import graph_objects as go
 
 # print(nemo_asr.models.EncDecCTCModel.list_available_models())
 asr_model = nemo_asr.models.EncDecCTCModel.from_pretrained(model_name='QuartzNet15x5Base-En', strict=False)
-
-# Download audio sample which we'll try
 AUDIO_FILENAME = '../Data/wav/f86f93f2-d49a-456d-96c5-0b3858605736.wav'
-#"C:\Users\caurd\Desktop\MSU\Spring '22\CSE 498\CapstoneCode\Data\wav\f86f93f2-d49a-456d-96c5-0b3858605736.wav"
+
 
 def displaySignalandSpectrum(audio_file: str) -> None:
     """
@@ -142,7 +140,7 @@ if np.argmax(probs[0]) == 0:
 for idx in range(1, probs.shape[0]):
     current_char_idx = np.argmax(probs[idx])
     if state == 'space' and current_char_idx != 0 and current_char_idx != 28:
-        spaces.append([idx_state, idx-1])
+        spaces.append([idx_state, idx - 1])
         state = ''
     if state == '':
         if current_char_idx == 0:
@@ -150,8 +148,7 @@ for idx in range(1, probs.shape[0]):
             idx_state = idx
 
 if state == 'space':
-    spaces.append([idx_state, len(probs)-1])
-
+    spaces.append([idx_state, len(probs) - 1])
 
 # calibration offset for timestamps: 180 ms
 offset = -0.18
@@ -163,12 +160,12 @@ words = transcript.split()
 pos_prev = 0
 for j, spot in enumerate(spaces):
     display(words[j])
-    pos_end = offset + (spot[0]+spot[1])/2*time_stride
-    print(pos_prev, pos_end*sample_rate)
-    display(Audio(signal[int(pos_prev*sample_rate):int(pos_end*sample_rate)],
-                 rate=sample_rate))
+    pos_end = offset + (spot[0] + spot[1]) / 2 * time_stride
+    print(pos_prev, pos_end * sample_rate)
+    display(Audio(signal[int(pos_prev * sample_rate):int(pos_end * sample_rate)],
+                  rate=sample_rate))
     pos_prev = pos_end
 
-display(words[j+1])
-display(Audio(signal[int(pos_prev*sample_rate):],
-        rate=sample_rate))
+display(words[j + 1])
+display(Audio(signal[int(pos_prev * sample_rate):],
+              rate=sample_rate))

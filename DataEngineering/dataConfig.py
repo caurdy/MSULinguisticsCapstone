@@ -131,6 +131,7 @@ def convertDataToNemoManifest(transcript_dir: str = '../Data/Transcripts/', audi
     and write them out to output_directory
     If train_size is None, all data will be written to manifest_train.json
         train_size percentage will divide train/test based on duration of audio files (NOT on count)
+        the first n samples loaded in which fit under the limit will be transferred to the test set
     If file_size_limit is None, all files will be used.
     NOTE: The training and audio files must have the same name and only differ by a -corrected.txt tag (for transcripts)
             e.x. 'audio1.wav' corresponds to 'audio1-corrected.txt'
