@@ -101,7 +101,9 @@ app.layout = html.Div([
     dcc.Location(id="url", refresh=False),
     sidebar,
     content,
-    dcc.Store(id='stored-data', data=df, storage_type='session'),
+    dcc.Store(id='stored-data', data=[]),
+    dcc.Store(id='click_save'),
+    dcc.Store(id='archive-size')
 ])
 
 

@@ -3,11 +3,13 @@ import datetime
 import io
 
 import dash
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output, State, ClientsideFunction
 from dash import dcc, html, dash_table, callback_context
 import os
 
 import pandas as pd
+from dash.exceptions import PreventUpdate
+
 from starter import app
 from Combine.CombineFeatures import combineFeatures
 
@@ -15,10 +17,10 @@ from Combine.CombineFeatures import combineFeatures
 
 # app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
-transcript = ""
+var = tuple()
 
 layout = html.Div([
-    # give id UpButt
+
     dcc.Upload(
         id='upload-data',
         children=html.Div([
@@ -57,28 +59,43 @@ layout = html.Div([
     #             ),
     html.Div(id='output-div', children=[]),
     html.Div(id='output-data-upload', children=[]),
+    # html.Button("Save Transcript", id='saver', children=var, n_clicks=0),
 ])
 
 
-@app.callback(Output('output-data-upload', 'children'),
-              Input('upload-data', 'contents'),
-              Input('UpButt', 'n_clicks'),
-              State('upload-data', 'filename'),
-              State('upload-data', 'last_modified'))
-def display_output(list_of_contents, n_clicks, list_of_names, list_of_dates):
+@app.callback(
+    Output('stored-data', 'data'),
+    Output('click_save', 'data'),
+    Output('output-data-upload', 'children'),
+    Input('upload-data', 'contents'),
+    Input('UpButt', 'n_clicks'),
+    State('upload-data', 'filename'),
+    State('upload-data', 'last_modified'),
+    State('stored-data', 'data'),
+    State('click_save', 'data'),
+    prevent_initial_callback=True)
+def display_output(list_of_contents, n_clicks, list_of_names, list_of_dates, data, click):
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
     # print("ID: ", changed_id)
+
     if list_of_contents is not None:
+        click = click or {'clicks': 0}
+
+        click['clicks'] = click['clicks'] + 1
+        n_clicks = click['clicks']
         children = [
 
-            parse_contents(list_of_contents, list_of_names, list_of_dates, n_clicks)
+            parse_contents(list_of_contents, list_of_names, list_of_dates, n_clicks, data)
         ]
         # parse_contents(c, n, d, count) for c, n, d in
         # zip(list_of_contents, list_of_names, list_of_dates)]
-        return children
+        return data, click, children[0][1]
+    else:
+        return data, click, []
 
 
-def parse_contents(contents, filename, date, cnt):
+
+def parse_contents(contents, filename, date, cnt, store):
     if contents is not None:
         content_type, content_string = contents.split(',')
         # change this to a .wav use pipeline to get. test
@@ -99,6 +116,9 @@ def parse_contents(contents, filename, date, cnt):
 
                 combineFeatures(f'assets/{filename}', f'assets/transcript_{cnt}')
                 df = pd.read_csv(f'assets/transcript_{cnt}.csv')
+                # global var
+                archive = tuple((filename, f'transcript_{cnt}.csv', datetime.datetime.now().strftime('%m/%d/%Y')))
+                store.append(archive)
                 # df = pd.read_csv("assets/random.csv")
                 # print("COUNT: ", cnt)
                 # os.remove("assets/transcript.csv")
@@ -128,7 +148,7 @@ def parse_contents(contents, filename, date, cnt):
                 })
             ], id='transcript')
         else:
-            return html.Div([
+            return store, html.Div([
                 html.H5(filename),
                 html.Button(html.Audio(id="audio", src=f'assets/{filename}', controls=True, autoPlay=False)),
                 html.Div(style={'padding': '2rem'}),
@@ -170,6 +190,20 @@ def parse_contents(contents, filename, date, cnt):
             ],
                 style={'margin-left': '300px'}
             )
+
+
+# @app.callback(Output('stored-data', 'data'),
+#              Input('saver', 'n_clicks'),
+#               prevent_inital_callback = True)
+# def setupvar(clicks):
+#     return html.Div(var)
+
+
+# def store_data(_):
+#     if _ is not None:
+#         return [var]
+#     else:
+#         PreventUpdate
 
 # @app.callback(Output('stored-data', 'data'),
 #               Input('transcript', 'transcript'))
