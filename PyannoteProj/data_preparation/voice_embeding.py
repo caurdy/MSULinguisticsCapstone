@@ -12,7 +12,6 @@ from pyannote.audio.pipelines.utils import get_devices
 from pyannote.audio.utils.metric import DiscreteDiarizationErrorRate
 
 import torch
-
 import pytorch_lightning as pl
 
 print(torch.cuda.device_count())
@@ -56,7 +55,8 @@ if __name__ == '__main__':
     finetuned = deepcopy(pretrained)
     finetuned.task = emb_task
 
-    trainer = pl.Trainer(strategy="dp", accelerator="gpu", devices="auto", max_epochs=1)
+    trainer = pl.Trainer(strategy="dp", accelerator="gpu", devices="auto", max_epochs=1, limit_val_batches=0,
+                         num_sanity_val_steps=0)
     trainer.fit(finetuned)
 
     # der_finetuned = evaluation(model=finetuned, protocol=ami, subset="test")

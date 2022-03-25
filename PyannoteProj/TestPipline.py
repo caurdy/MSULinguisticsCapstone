@@ -6,13 +6,18 @@ import yaml
 import os
 from pyannote.core import notebook
 
-sad_scores = Model.from_pretrained("pyannote/segmentation")
-emb_scores = Model.from_pretrained("pyannote/embedding")
-
+sad_scores = Model.from_pretrained("data_preparation/saved_model/model_1/seg_model1.ckpt")
 
 pipeline = pipelines.SpeakerDiarization(segmentation=sad_scores,
-                                        embedding=emb_scores,
-                                        embedding_batch_size=32)
+                                        embedding="speechbrain/spkrec-ecapa-voxceleb",
+                                        embedding_batch_size=16)
+
+# sad_scores = Model.from_pretrained("pyannote/segmentation")
+#
+#
+# pipeline = pipelines.SpeakerDiarization(segmentation=sad_scores,
+#                                         embedding="speechbrain/spkrec-ecapa-voxceleb",
+#                                         embedding_batch_size=16)
 
 """
     onset=0.6: mark region as active when probability goes above 0. 
@@ -31,10 +36,9 @@ initial_params = {
                  }
 pipeline.instantiate(initial_params)
 
-
-
-#input data
+# input data
 from pathlib import Path
+
 filePath = r"Data"
 wav_names_lst = list(os.listdir(filePath))
 print(wav_names_lst)
@@ -51,7 +55,3 @@ for filename in wav_names_lst:
     notebook.plot_annotation(diarization_result, ax=ax, time=True, legend=True)
     figure.savefig('OutputSet/{}_diarization.png'.format(only_name))
     print("{} done".format(only_name))
-
-
-
-
