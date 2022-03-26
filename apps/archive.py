@@ -1,7 +1,7 @@
 # Add Transcript Archive here
 # Have wav and associated csv and be able to view full csv
 from dash.dependencies import Input, Output, State
-from dash import html, callback_context, dash_table, ALL
+from dash import html, callback_context, dash_table, MATCH, ALL
 import datetime
 import pandas as pd
 
@@ -11,6 +11,7 @@ button = html.A(html.Button('Show Transcript', id="dispaly"), href="/", style={}
 
 # row =
 transcripts = []
+btn_nlicks = []
 
 layout = html.Div([
     html.H1("Transcript Archive"),
@@ -229,7 +230,12 @@ def get_from_store(count, var_store, size):
         for i in var_store:
             i = tuple((i[0], i[1], i[2]))
             transcripts.append(i)
+            btn = html.Button('Show Transcript', id={'role': 'tshow', 'index' : f'{i[1][-5:-4]}'}, n_clicks=0,
+                              style={'display': 'inline-block'})
+
+            btn_nlicks.append(btn)
             layout.append(
+                html.Div([
                 html.Div([
                     html.Div(html.H5(i[2]),
                              style={'display': 'inline-block',
@@ -250,27 +256,31 @@ def get_from_store(count, var_store, size):
                                     'borderStyle': 'dashed',
                                     'borderWidth': '2px',
                                     'textAlign': 'center'}),
-                    html.A(html.Button('Show Transcript', id=f'tshow_{i[1][-5:-4]}', n_clicks=0),
-                           style={'display': 'inline-block'}),
+
+                    btn,
                 ], style={'display': 'inline-block', 'margin': '10px', 'width': '120%', 'borderStyle': 'dashed',
-                          'borderWidth': '1px', 'padding': '1rem'}), )
+                          'borderWidth': '1px', 'padding': '1rem'},
+                ),
+                html.Div(id={'role': 'display', 'index': f'{i[1][-5:-4]}'}, children=[])]))
+        btn_nlicks.append(id('tshow_1.n_clicks'))
+        var_store.sort(reverse=True)
         return size, layout
     else:
         return size, []
 
 
-tbuttons = [html.Button(
-              'Button {}'.format(i),
-               id={
-                   'type' : 'mybuttons',
-                   'index' : i,
-               }
-         )
-         for i in range(len(transcripts))]
-
+# def update(ignore):
+#     return np.random.uniform()
+#
+# for i in range(len(transcripts)):
+#     app.callback(
+#         Output('chosen', 'children'),
+#         [Input(f'tshow_{i}', 'n_clicks')]
+#     )(update)
 @app.callback(
-    Output('chosen', 'children'),
-    [Input(f'tshow_{i}', "n_clicks") for i in range(1, 2)],
+    Output({'role': 'display', 'index': MATCH}, 'children'),
+    [Input({'role': 'tshow', 'index': ALL}, 'n_clicks')],
+    # Input('transcripts', 'transcripts'),
     # params=list(input(f'tshow_{i}', "n_clicks") for i in range(1, len(transcripts)), property = 'n_clicks'),
     # Input({'type':'mybuttons', 'index':ALL}, 'n_clicks'),
     State('archive-size', 'data'),
@@ -280,49 +290,58 @@ tbuttons = [html.Button(
     # Input('display4', 'n_clicks'),
     prevent_initial_call=True,
 )
+# n_clicks currently just takes how many times each Input (tshow_) has been clicked
+# try to form an object with an id that contains all present n_clicks?
 def displayClick(n_clicks, size, archive):
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
     # if changed_id == 'tshow_2.n_clicks':
     x = transcripts
-    if n_clicks > 0 and changed_id != 0 and 'tshow_' in changed_id:
-        if n_clicks % 2 == 1:
-            changed_id = int(changed_id[6:-9])
-            df = pd.read_csv(f"assets/transcript_{changed_id}.csv")
-            return html.Div([
-                html.Div([html.Hr(),
-                          html.Div(html.Button(
-                              html.Audio(id="audio", src=f'assets/{archive[changed_id - 1][0]}', controls=True,
-                                         autoPlay=False))),
-                          html.Div(style={'padding': '2rem'}),
-                          dash_table.DataTable(
+    if n_clicks != [0*len(transcripts)]:
+        index = size['clicks']-int(changed_id[10:11])
+        if int(n_clicks[index]) > 0 and 'tshow' in changed_id:
+            if n_clicks[index] % 2 == 1:
+                # changed_id = int(changed_id[6:-9])
+                df = pd.read_csv(f"assets/transcript_{index+1}.csv")
+                return html.Div([
+                    html.Div([html.Hr(),
+                              html.H4(transcripts[index][1]),
+                              html.Div(html.Button(
+                                  html.Audio(id="audio", src=f'assets/{transcripts[index][0]}', controls=True,
+                                             autoPlay=False))),
+                              html.Div(style={'padding': '2rem'}),
+                              dash_table.DataTable(
 
-                              df.to_dict('records'),
-                              [{'name': i, 'id': i} for i in df.columns],
-                              css=[{
-                                  'selector': '.dash-spreadsheet td div',
-                                  'rule': '''
-                                            line-height: 15px;
-                                            max-height: 30px; min-height: 30px; height: 30px;
-                                            display: block;
-                                            overflow-y: hidden;
-                                        '''
-                              }],
-                              style_data={
-                                  'whiteSpace': 'normal',
-                                  'height': 'auto',
-                                  'lineHeight': '15px'
-                              },
-                              style_cell={'textAlign': 'left'},
-                              # style_data={'whiteSpace': 'normal',
-                              #             'minWidth': '180px', 'width': '180px', 'maxWidth': '180px'},
-                              # 'max-height': '30px', 'min-height': '30px', 'height': '30px',
-                              # 'lineHeight': '15px',
-                              #         },
-                              style_table={'textAlign': 'center', 'width': '1050px'},
-                          ), ]),
-                html.Hr()])
-        else:
-            return []
+                                  df.to_dict('records'),
+                                  [{'name': i, 'id': i} for i in df.columns],
+                                  css=[{
+                                      'selector': '.dash-spreadsheet td div',
+                                      'rule': '''
+                                                line-height: 15px;
+                                                max-height: 30px; min-height: 30px; height: 30px;
+                                                display: block;
+                                                overflow-y: hidden;
+                                            '''
+                                  }],
+                                  style_data={
+                                      'whiteSpace': 'normal',
+                                      'height': 'auto',
+                                      'lineHeight': '15px'
+                                  },
+                                  style_cell={'textAlign': 'left'},
+                                  # style_data={'whiteSpace': 'normal',
+                                  #             'minWidth': '180px', 'width': '180px', 'maxWidth': '180px'},
+                                  # 'max-height': '30px', 'min-height': '30px', 'height': '30px',
+                                  # 'lineHeight': '15px',
+                                  #         },
+                                  style_table={'textAlign': 'center', 'width': '1050px'},
+                              ), ]),
+                    html.Hr()])
+            else:
+                return []
+    else:
+        return []
+
+
 
 # @app.callback(Output("archive", "children"),
 #               [Input("stored_data", "data")])
