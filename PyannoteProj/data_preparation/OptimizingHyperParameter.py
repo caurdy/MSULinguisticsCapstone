@@ -10,7 +10,7 @@ id = input("input id: ")
 seg_model = "saved_model/model_{}/seg_model{}.ckpt".format(id, id)
 pipeline = pipelines.SpeakerDiarization(segmentation=seg_model,
                                         embedding="speechbrain/spkrec-ecapa-voxceleb",
-                                        embedding_batch_size=16)
+                                        embedding_batch_size=8)
 
 """
     onset=0.6: mark region as active when probability goes above 0. 
@@ -54,7 +54,7 @@ optimizer = Optimizer(pipeline)
 print("start tune hyper parameter")
 optimizer.tune(list(ami.development()),
                warm_start=initial_params,
-               n_iterations=30,
+               n_iterations=25,
                show_progress=True)
 
 optimized_params = optimizer.best_params

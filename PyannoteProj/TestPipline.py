@@ -5,35 +5,27 @@ import numpy as np
 import yaml
 import os
 from pyannote.core import notebook
+import json
 
-sad_scores = Model.from_pretrained("data_preparation/saved_model/model_1/seg_model1.ckpt")
+
+id = input("Given the id:")
+
+sad_scores = Model.from_pretrained("data_preparation/saved_model/model_{}/seg_model{}.ckpt".format(id, id))
 
 pipeline = pipelines.SpeakerDiarization(segmentation=sad_scores,
                                         embedding="speechbrain/spkrec-ecapa-voxceleb",
                                         embedding_batch_size=16)
-
-# sad_scores = Model.from_pretrained("pyannote/segmentation")
-#
-#
-# pipeline = pipelines.SpeakerDiarization(segmentation=sad_scores,
-#                                         embedding="speechbrain/spkrec-ecapa-voxceleb",
-#                                         embedding_batch_size=16)
-
 """
     onset=0.6: mark region as active when probability goes above 0. 
     offset=0.4: switch back to inactive when probability goes below 0.4
     min_duration_on=0.0: remove active regions shorter than that many seconds
     min_duration_off=0.0: fill inactive regions shorter than that many seconds
 """
-initial_params = {
-                "onset": 0.810,
-                "offset": 0.481,
-                "min_duration_on": 0.055,
-                "min_duration_off": 0.098,
-                "min_activity": 6.073,
-                "stitch_threshold": 0.040,
-                "clustering": {"method": "average", "threshold": 0.595},
-                 }
+
+with open("data_preparation/saved_model/model_{}/sample.json".format(id)) as file:
+    initial_params = json.load(file)
+    initial_params = dict(initial_params)
+
 pipeline.instantiate(initial_params)
 
 # input data
