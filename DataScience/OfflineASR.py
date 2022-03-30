@@ -20,6 +20,77 @@ asr_model = nemo_asr.models.EncDecCTCModel.from_pretrained(model_name='QuartzNet
 AUDIO_FILENAME = '../Data/wav/f86f93f2-d49a-456d-96c5-0b3858605736.wav'
 
 
+def produceTimeAlignedTranscript(audio_file: str, speaker_file: str) -> None:
+    """
+    Takes in an audio file path and a .rttm file path (the product of speaker diarization) to produce
+    a series of json objects representing sentences with attributes
+        (start, end, content, speaker, wordcount, confidence)
+    :param audio_file: Path to audio file
+    :param speaker_file: Path to speaker diarization file
+    :return: None
+    """
+
+    # load audio signal with librosa
+    signal, sample_rate = librosa.load(audio_file, sr=16000)
+    transcript = ASR_MODEL.transcribe(paths2audio_files=[audio_file])[0]  # get txt transcript
+    transcript = RPUNCT.punctuate(transcript)
+    logits = ASR_MODEL.transcribe([audio_file], logprobs=True)[0]  # get vector of probabilities for word predictions
+    probs = softmax(logits)
+    # 20ms is duration of a timestep at output of the model
+    time_stride = 0.02
+    # get model's alphabet
+    labels = list(ASR_MODEL.decoder.vocabulary) + ['blank']
+    labels[0] = 'space'
+    # get timestamps for space symbols
+    spaces = []
+    state = ''
+    idx_state = 0
+
+    if np.argmax(probs[0]) == 0:
+        state = 'space'
+    for idx in range(1, probs.shape[0]):
+        current_char_idx = np.argmax(probs[idx])
+        if state == 'space' and current_char_idx != 0 and current_char_idx != 28:
+            spaces.append([idx_state, idx - 1])
+            state = ''
+        if state == '':
+            if current_char_idx == 0:
+                state = 'space'
+                idx_state = idx
+    if state == 'space':
+        spaces.append([idx_state, len(probs) - 1])
+
+    # calibration offset for timestamps: 180 ms
+    offset = -0.18
+    # split the transcript into words
+    words = transcript.split()
+    # cut words
+    pos_prev = 0
+    timestampList = []
+    for j, spot in enumerate(spaces):
+        pos_end = offset + (spot[0] + spot[1]) / 2 * time_stride
+        timestampList.append((round(pos_prev, 3), round(pos_end, 3), words[j]))
+        pos_prev = pos_end
+
+    df = pd.read_csv(speaker_file, delimiter=' ', header=None)
+    df.columns = ['Type', 'Audio File', 'IDK', 'Start Time', 'Duration', 'N/A', 'N/A', 'ID', 'N/A', 'N/A']
+    df = df.drop(['IDK', 'N/A', 'N/A', 'N/A', 'N/A'], axis=1)
+    sentences = []
+    for _, row in df.iterrows():
+        start = row.loc['Start Time']
+        duration = row.loc['Duration']
+        sentence = []
+        for word_begin, word_end, word in timestampList:
+            if start > word_begin:  # this word is before this speaker, continue
+                continue
+            elif start + duration < word_begin:  # this word is after the speaker, break
+                break
+            sentence.append(word)  # this word is in the sentence
+        sentences.append(" ".join(sentence))
+    df = df.assign(content=sentences)
+    df.to_csv('../Data/test.csv')
+
+
 def displaySignalandSpectrum(audio_file: str) -> None:
     """
     Takes in an audio file and plots the signal and spectogram in your browser.
