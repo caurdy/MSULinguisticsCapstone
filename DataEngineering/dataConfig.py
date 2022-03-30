@@ -142,11 +142,14 @@ def convertDataToNemoManifest(transcript_dir: str = '../Data/Transcripts/', audi
     :param audio_dir: Directory containing audio .wav files
     :param train_size: Fraction of audio data to put in training manifest
     """
+    # ToDO
+    #  implement ctc segmentation on audio files > 16.5 seconds
+    NEMO_CTC_DURATION_LIMIT = 16.5  # Audio files need to be less than 16.5 seconds for Nemo training
     df_train = pd.DataFrame(columns=['audio_filepath', 'text', 'duration'])
     df_test = pd.DataFrame(columns=['audio_filepath', 'text', 'duration'])
     # Read transcripts into dataframe
     for filename in os.listdir(transcript_dir):
-        if '-corrected' not in filename:    # make usre the files
+        if '-corrected' not in filename:    # make sure the files have corrections
             continue
 
         path = os.path.join(transcript_dir, filename)
@@ -168,7 +171,8 @@ def convertDataToNemoManifest(transcript_dir: str = '../Data/Transcripts/', audi
         data['audio_filepath'] = os.path.abspath(audio_path)
         duration = round(get_duration(load(audio_path, sr=16000)[0]), 5)
         data['duration'] = duration
-        df_train.loc[len(df_train.index)] = data
+        if duration <= NEMO_CTC_DURATION_LIMIT:
+            df_train.loc[len(df_train.index)] = data
 
     if train_size:
         test_size = df_train['duration'].sum() * (1 - train_size)
@@ -180,8 +184,9 @@ def convertDataToNemoManifest(transcript_dir: str = '../Data/Transcripts/', audi
             df_train.drop(i, axis=0, inplace=True)
             if duration >= test_size:
                 break
-        df_test.to_json(os.path.join(output_directory, 'manifest_test.json'), orient='records')
-    df_train.to_json(os.path.join(output_directory, 'manifest_train.json'), orient='records')
+
+        df_test.to_json(os.path.join(output_directory, 'manifest_test_small.json'), orient='records', lines=True)
+    df_train.to_json(os.path.join(output_directory, 'manifest_train_small.json'), orient='records', lines=True)
 
 
 def createCleanedDataFrame():
