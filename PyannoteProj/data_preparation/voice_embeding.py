@@ -2,7 +2,7 @@ from pyannote.audio import Model, Inference
 import sys
 import time
 sys.path.append('./MSULinguisticsCapstone/PyannoteProj/data_preparation')
-from database_loader import DataLoader
+from PyannoteProj.data_preparation.database_loader import DataLoader
 from copy import deepcopy
 from pyannote.audio.tasks import SpeakerEmbedding
 

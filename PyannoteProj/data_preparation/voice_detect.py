@@ -1,9 +1,9 @@
-from pyannote.audio import Model, Inference, pipelines
+from pyannote.audio import Inference, pipelines
 import sys
 import time
 
 sys.path.append('./MSULinguisticsCapstone/PyannoteProj/data_preparation')
-from database_loader import DataLoader
+from PyannoteProj.data_preparation.database_loader import DataLoader
 from copy import deepcopy
 from pyannote.audio.tasks import Segmentation
 import os
@@ -12,7 +12,6 @@ from pyannote.audio.utils.signal import binarize
 
 from pyannote.audio.pipelines.utils import get_devices
 from pyannote.audio.utils.metric import DiscreteDiarizationErrorRate
-import torch
 
 import pytorch_lightning as pl
 import json
@@ -40,7 +39,7 @@ def evaluation(model, protocol, subset="test"):
 
 
 def Train():
-    choose_model_name = input("Give the name of model")
+    id=input("Give the name of model")
 
     folder = './saved_model'
     sub_folders = [name for name in os.listdir(folder) if os.path.isdir(os.path.join(folder, name))]
@@ -54,8 +53,8 @@ def Train():
     test_file = next(ami.test())
 
     # import pretrained model
-    pretrained = pipelines.utils.get_model("./saved_model/{}/seg_model{}.ckpt".format(choose_model_name,
-                                                                                      choose_model_name[6:]))
+    pretrained = pipelines.utils.get_model("saved_model/model_{}/seg_model{}.ckpt".format(id,
+                                                                                      id))
     spk_probability = Inference(pretrained, step=2.5)(test_file)
     print(spk_probability)
 
@@ -78,14 +77,12 @@ def Train():
         os.mkdir('saved_model/model_{}'.format(str(new_model_id)))
         trainer.save_checkpoint("saved_model/model_{}/seg_model{}.ckpt".format(str(new_model_id), str(new_model_id)))
         sub_folders.append("model_{}".format(str(new_model_id)))
-        return sub_folders
+        with open("saved_model/sample.json", "w") as outfile:
+            json.dump(sub_folders, outfile)
     else:
         print("Not too much performance, drop out!")
-        return sub_folders
 
 
 if __name__ == '__main__':
-    new_sub_folders = Train()
-    with open("saved_model/sample.json", "w") as outfile:
-        json.dump(new_sub_folders, outfile)
+    Train()
 

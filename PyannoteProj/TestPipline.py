@@ -15,12 +15,6 @@ sad_scores = Model.from_pretrained("data_preparation/saved_model/model_{}/seg_mo
 pipeline = pipelines.SpeakerDiarization(segmentation=sad_scores,
                                         embedding="speechbrain/spkrec-ecapa-voxceleb",
                                         embedding_batch_size=16)
-"""
-    onset=0.6: mark region as active when probability goes above 0. 
-    offset=0.4: switch back to inactive when probability goes below 0.4
-    min_duration_on=0.0: remove active regions shorter than that many seconds
-    min_duration_off=0.0: fill inactive regions shorter than that many seconds
-"""
 
 with open("data_preparation/saved_model/model_{}/sample.json".format(id)) as file:
     initial_params = json.load(file)
