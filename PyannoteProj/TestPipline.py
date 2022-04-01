@@ -12,6 +12,7 @@ def TrainAudio(model_idx):
     else:
         print("No new model need to be trained")
 
+
 def TestAudio(model_idx, embedding_batch_size=8):
     sad_scores = Model.from_pretrained("data_preparation/saved_model/model_{}/seg_model{}.ckpt".format(model_idx,
                                                                                                        model_idx))
