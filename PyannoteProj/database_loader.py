@@ -1,9 +1,17 @@
 import os
 from pyannote.database import FileFinder
+from pathlib import Path
+
+
+def CreateDatabase(filename):
+    pass
+
 
 def DataLoader():
     # tell pyannote.database where to find partition, reference, and wav files
-    os.environ["PYANNOTE_DATABASE_CONFIG"] = 'E:\MSULinguisticsCapstone\PyannoteProj\data_preparation\TrainingData\AMI_set\database.yml'
+    sub_folder = '/data_preparation/TrainingData/AMI_set/database.yml'
+    folder = str(Path(sub_folder).absolute())
+    os.environ["PYANNOTE_DATABASE_CONFIG"] = folder
     print(os.environ["PYANNOTE_DATABASE_CONFIG"])
 
     # used to automatically find paths to wav files

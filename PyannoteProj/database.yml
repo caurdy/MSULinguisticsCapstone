@@ -1,0 +1,21 @@
+Databases:
+  # tell pyannote.database where to find AMI wav files.
+  # {uri} is a placeholder for the session name (eg. ES2004c).
+  # you might need to update this line to fit your own setup.
+  AMI: ./data_preparation/TrainingData/AMI_set/WAV_set/ami/database/amicorpus/{uri}/audio/{uri}.Mix-Headset.wav
+Protocols:
+  AMI:
+    SpeakerDiarization:
+      only_words:
+        train:
+            uri: ./data_preparation/TrainingData/AMI_set/LIST_set/lists/train.meetings.txt
+            annotation: ./data_preparation/TrainingData/AMI_set/RTTM_set/only_words/rttms/train/{uri}.rttm
+            annotated: ./data_preparation/TrainingData/AMI_set/UEM_set/uems/train/{uri}.uem
+        development:
+            uri: ./data_preparation/TrainingData/AMI_set/LIST_set/lists/dev.meetings.txt
+            annotation: ./data_preparation/TrainingData/AMI_set/RTTM_set/only_words/rttms/dev/{uri}.rttm
+            annotated: ./data_preparation/TrainingData/AMI_set/UEM_set/uems/dev/{uri}.uem
+        test:
+            uri: ./data_preparation/TrainingData/AMI_set/LIST_set/lists/test.meetings.txt
+            annotation: ./data_preparation/TrainingData/AMI_set/RTTM_set/only_words/rttms/test/{uri}.rttm
+            annotated: ./data_preparation/TrainingData/AMI_set/UEM_set/uems/test/{uri}.uem
