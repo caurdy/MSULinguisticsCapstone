@@ -1,36 +1,42 @@
 """
 ASR predictions using non fine-tuned Wav2Vec2 model
 """
+import string
+import os
 
-import soundfile as sf
 import librosa
 import torch
-from datasets import load_metric
 import time
 import jiwer
-from transformers import Wav2Vec2ForCTC, Wav2Vec2CTCTokenizer, Wav2Vec2FeatureExtractor, Wav2Vec2Processor
+import numpy as np
+import rpunct
+from transformers import Speech2TextForConditionalGeneration, Speech2TextProcessor, Wav2Vec2ForCTC, \
+    Wav2Vec2CTCTokenizer, Wav2Vec2FeatureExtractor, Wav2Vec2Processor
 from DataEngineering.CleanTranscript import cleanFile
 
-
-def getTranscript(audio):
-    #tokenizer = Wav2Vec2CTCTokenizer.from_pretrained('../Data/Models/')
-    #tokenizer = Wav2Vec2CTCTokenizer('../Data/vocab.json', unk_token='[UNK]',
-    #                                 pad_token='[PAD]', word_delimiter_token='|')
-    tokenizer = Wav2Vec2CTCTokenizer.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
-    #model = Wav2Vec2ForCTC.from_pretrained("../Data/Models/")
-    model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
-
-    feature_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0,
-                                                 do_normalize=True, return_attention_mask=False)
-    processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
+tokenizer = Wav2Vec2CTCTokenizer.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
+model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
+feature_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0,
+                                             do_normalize=True, return_attention_mask=False)
+processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
+RPUNCT = rpunct.RestorePuncts()
 
 
+def softmax(logits):
+    e = np.exp(logits - np.max(logits))
+    return e / e.sum(axis=-1).reshape([logits.shape[0], 1])
+
+
+def getTranscript(audio, model, processor):
     input_values = processor(torch.tensor(audio), sampling_rate=16000, return_tensors="pt", padding=True).input_values
     logits = model(input_values).logits
+    #probs = softmax(logits)
+    #max_probs = torch.argmax(probs, dim=-1)
+    #confidence = torch.sum(max_probs, dim=-1) / len(max_probs)
     predicted_ids = torch.argmax(logits, dim=-1)
-    transcription = processor.batch_decode(predicted_ids)[0]
-
-    return transcription
+    transcript = processor.batch_decode(predicted_ids)[0]
+    #transcript = RPUNCT.punctuate(transcript)
+    return transcript
 
 
 def testWER(transcription: str, label_file: str):
@@ -53,7 +59,7 @@ if __name__ == "__main__":
     label_2 = r"../Data/Transcripts/780cbc91-6131-41f0-9088-a3ddae83877c.txt"
     label_3 = r"../Data/Transcripts/c3fc8885-6500-4203-9cd0-03771b001a91.txt"
 
-    files_dict = {file_name1: label_1, file_name2: label_2, file_name3: label_3}
+    files_dict = {file_name2: label_2, file_name3: label_3}
     output_file = "toy_data_set.txt"
     i = 1
     results_file = open(output_file, "w")
@@ -63,12 +69,13 @@ if __name__ == "__main__":
 
         input_audio, _ = librosa.load(file, sr=16000)
         start = time.time()
-        transcript = getTranscript(input_audio)
+        transcript = getTranscript(input_audio, model, processor)
         end = time.time()
 
         results_file.write(f"Prediction: {transcript}\n")
         target, wer = testWER(transcript, label)
         results_file.write(f"Target:     {target}\n")
         results_file.write(f"WER: {wer}\n")
-        results_file.write(f"Time: {end-start}\n")
+        results_file.write(f"Time: {end - start}\n")
+
     results_file.close()
