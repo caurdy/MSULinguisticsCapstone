@@ -1,12 +1,12 @@
 import os
-
+from pyannote.database import FileFinder
 
 def DataLoader():
     # tell pyannote.database where to find partition, reference, and wav files
-    os.environ["PYANNOTE_DATABASE_CONFIG"] = 'PyannoteProj/data_preparation/database.yml'
+    os.environ["PYANNOTE_DATABASE_CONFIG"] = 'E:\MSULinguisticsCapstone\PyannoteProj\data_preparation\TrainingData\AMI_set\database.yml'
+    print(os.environ["PYANNOTE_DATABASE_CONFIG"])
 
     # used to automatically find paths to wav files
-    from pyannote.database import FileFinder
     preprocessors = {'audio': FileFinder()}
 
     # initialize 'only_words' experimental protocol
