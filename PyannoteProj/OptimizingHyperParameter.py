@@ -6,8 +6,8 @@ import json
 from pyannote.pipeline import Optimizer
 
 
-def Optimizing(id, num_opti_iteration=20, embedding_batch_size = 8):
-    seg_model = "data_preparation/saved_model/model_{}/seg_model{}.ckpt".format(id, id)
+def Optimizing(model, data_name, num_opti_iteration=20, embedding_batch_size = 8):
+    seg_model = model
     pipeline = pipelines.SpeakerDiarization(segmentation=seg_model,
                                             embedding="speechbrain/spkrec-ecapa-voxceleb",
                                             embedding_batch_size=embedding_batch_size)
@@ -23,7 +23,7 @@ def Optimizing(id, num_opti_iteration=20, embedding_batch_size = 8):
     pipeline.instantiate(initial_params)
 
     # Loading dataset
-    ami = DataLoader()
+    ami = DataLoader(data_name)
     metric = DiarizationErrorRate()
     for file in ami.test():
         # apply the voice activity detection pipeline
@@ -60,10 +60,4 @@ def Optimizing(id, num_opti_iteration=20, embedding_batch_size = 8):
     detection_error_rate = abs(metric)
     print(f'Detection error rate = {detection_error_rate * 100:.1f}%')
 
-    with open("data_preparation/saved_model/model_{}/sample.json".format(id), "w") as outfile:
-        json.dump(optimized_params, outfile)
-
-
-if __name__ == '__main__':
-    id = input("Input model id: ")
-    Optimizing(id)
+    return optimized_params

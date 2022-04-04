@@ -1,21 +1,34 @@
 Databases:
-  # tell pyannote.database where to find AMI wav files.
-  # {uri} is a placeholder for the session name (eg. ES2004c).
-  # you might need to update this line to fit your own setup.
   AMI: ./data_preparation/TrainingData/AMI_set/WAV_set/ami/database/amicorpus/{uri}/audio/{uri}.Mix-Headset.wav
+  Talkbank: ./data_preparation/TrainingData/Talkbank/WAV_set/{uri}.wav
 Protocols:
   AMI:
     SpeakerDiarization:
       only_words:
-        train:
-            uri: ./data_preparation/TrainingData/AMI_set/LIST_set/lists/train.meetings.txt
-            annotation: ./data_preparation/TrainingData/AMI_set/RTTM_set/only_words/rttms/train/{uri}.rttm
-            annotated: ./data_preparation/TrainingData/AMI_set/UEM_set/uems/train/{uri}.uem
         development:
-            uri: ./data_preparation/TrainingData/AMI_set/LIST_set/lists/dev.meetings.txt
-            annotation: ./data_preparation/TrainingData/AMI_set/RTTM_set/only_words/rttms/dev/{uri}.rttm
-            annotated: ./data_preparation/TrainingData/AMI_set/UEM_set/uems/dev/{uri}.uem
+          annotated: ./data_preparation/TrainingData/AMI_set/UEM_set/uems/dev/{uri}.uem
+          annotation: ./data_preparation/TrainingData/AMI_set/RTTM_set/only_words/rttms/dev/{uri}.rttm
+          uri: ./data_preparation/TrainingData/AMI_set/LIST_set/lists/dev.meetings.txt
         test:
-            uri: ./data_preparation/TrainingData/AMI_set/LIST_set/lists/test.meetings.txt
-            annotation: ./data_preparation/TrainingData/AMI_set/RTTM_set/only_words/rttms/test/{uri}.rttm
-            annotated: ./data_preparation/TrainingData/AMI_set/UEM_set/uems/test/{uri}.uem
+          annotated: ./data_preparation/TrainingData/AMI_set/UEM_set/uems/test/{uri}.uem
+          annotation: ./data_preparation/TrainingData/AMI_set/RTTM_set/only_words/rttms/test/{uri}.rttm
+          uri: ./data_preparation/TrainingData/AMI_set/LIST_set/lists/test.meetings.txt
+        train:
+          annotated: ./data_preparation/TrainingData/AMI_set/UEM_set/uems/train/{uri}.uem
+          annotation: ./data_preparation/TrainingData/AMI_set/RTTM_set/only_words/rttms/train/{uri}.rttm
+          uri: ./data_preparation/TrainingData/AMI_set/LIST_set/lists/train.meetings.txt
+  Talkbank:
+    SpeakerDiarization:
+      only_words:
+        development:
+          annotated: ./data_preparation/TrainingData/Talkbank/UEM_set/{uri}.uem
+          annotation: ./data_preparation/TrainingData/Talkbank/RTTM_set/{uri}.rttm
+          uri: ./data_preparation/TrainingData/Talkbank/LIST_set/dev.txt
+        test:
+          annotated: ./data_preparation/TrainingData/Talkbank/UEM_set/{uri}.uem
+          annotation: ./data_preparation/TrainingData/Talkbank/RTTM_set/{uri}.rttm
+          uri: ./data_preparation/TrainingData/Talkbank/LIST_set/test.txt
+        train:
+          annotated: ./data_preparation/TrainingData/Talkbank/UEM_set/{uri}.uem
+          annotation: ./data_preparation/TrainingData/Talkbank/RTTM_set/{uri}.rttm
+          uri: ./data_preparation/TrainingData/Talkbank/LIST_set/train.txt

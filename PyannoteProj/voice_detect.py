@@ -39,7 +39,7 @@ def evaluation(model, protocol, subset="test"):
     return abs(metric)
 
 
-def Train(model_id, num_epoch=2):
+def Train(model, data_name, num_epoch=2):
     folder = './data_preparation/saved_model'
     folder = Path(folder).absolute()
     sub_folders = [name for name in os.listdir(folder) if os.path.isdir(os.path.join(folder, name))]
@@ -48,13 +48,12 @@ def Train(model_id, num_epoch=2):
     """
         Training part goes here
     """
-    ami = DataLoader()
+    ami = DataLoader(data_name)
     # Test_file dataset
     test_file = next(ami.test())
 
     # import pretrained model
-    pretrained = pipelines.utils.get_model("./data_preparation/saved_model/model_{}/seg_model{}.ckpt".format(model_id,
-                                                                                          model_id))
+    pretrained = model
     spk_probability = Inference(pretrained, step=2.5)(test_file)
     print(spk_probability)
 
@@ -71,20 +70,6 @@ def Train(model_id, num_epoch=2):
     der_finetuned = evaluation(model=finetuned, protocol=ami, subset="test")
     print(f"Local DER (finetuned) = {der_finetuned * 100:.1f}%")
 
-    if der_finetuned * 100 < der_pretrained * 100:
-        print("the model performance is greater than before, Saved!")
-        new_model_id = int(sub_folders[-1][6:]) + 1
-        os.mkdir('./data_preparation/saved_model/model_{}'.format(str(new_model_id)))
-        trainer.save_checkpoint("./data_preparation/saved_model/model_{}/seg_model{}.ckpt".format(str(new_model_id), str(new_model_id)))
-        sub_folders.append("model_{}".format(str(new_model_id)))
-        with open("./data_preparation/saved_model/sample.json", "w") as outfile:
-            json.dump(sub_folders, outfile)
-        return True, new_model_id
-    else:
-        print("Not too much performance, drop out!")
-        return False, model_id
+    return trainer, der_pretrained, der_finetuned
 
-
-if __name__ == '__main__':
-    Train(model_id=1)
 

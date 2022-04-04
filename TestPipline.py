@@ -4,7 +4,7 @@ from pyannote.audio import Model
 import numpy as np
 import yaml
 
-sad_scores = Model.from_pretrained("pyannote/model_0")
+sad_scores = Model.from_pretrained("pyannote/model_03_20_2022_20_03_23")
 emb_scores = Model.from_pretrained("pyannote/embedding")
 
 
