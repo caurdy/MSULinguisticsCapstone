@@ -1,6 +1,8 @@
 import pandas as pd
 from DataScience.SpeechToText import getTranscript
+from NamedEntityRecognition.ner import ner
 import csv
+import json
 from scipy.io import wavfile
 from pyannote.audio import pipelines
 from pyannote.audio import Model
@@ -25,7 +27,7 @@ PROCESSOR = Wav2Vec2Processor(feature_extractor=FEATURE_EXTRACTOR, tokenizer=TOK
 
 
 list_audios = []
-#example file_info list of dictionaries to fill out
+# example file_info list of dictionaries to fill out
 final_info = [
     {"start": "01:003", "end": "02.035",
      "speaker": "1", "transcript": ""},
@@ -47,7 +49,7 @@ final_info = [
 # writer.writerows(final_info)
 # transcript_file.close()
 
-#--------------------------------------------------------------------
+# --------------------------------------------------------------------
 
 # Speech Diarization Configuration
 sad_scores = Model.from_pretrained("pyannote/segmentation")
@@ -57,15 +59,16 @@ pipeline = pipelines.SpeakerDiarization(segmentation=sad_scores,
                                         embedding=emb_scores,
                                         embedding_batch_size=32)
 initial_params = {
-                "onset": 0.810,
-                "offset": 0.481,
-                "min_duration_on": 0.055,
-                "min_duration_off": 0.098,
-                "min_activity": 6.073,
-                "stitch_threshold": 0.040,
-                "clustering": {"method": "average", "threshold": 0.595},
-                 }
+    "onset": 0.810,
+    "offset": 0.481,
+    "min_duration_on": 0.055,
+    "min_duration_off": 0.098,
+    "min_activity": 6.073,
+    "stitch_threshold": 0.040,
+    "clustering": {"method": "average", "threshold": 0.595},
+}
 pipeline.instantiate(initial_params)
+
 
 # audio: the directory of the audio file
 def combineFeatures(audio, filename="transcript"):
@@ -77,17 +80,18 @@ def combineFeatures(audio, filename="transcript"):
     # Convert rttm file to csv
     dair_csv = pd.read_csv('diarization.rttm', delimiter=' ', header=None)
     dair_csv.columns = ['Type', 'Audio File', 'IDK', 'Start Time', 'Duration', 'N/A', 'N/A', 'ID', 'N/A', 'N/A']
-    #test_file.to_csv('../Combine/test.csv', index=None)
+    # test_file.to_csv('../Combine/test.csv', index=None)
     os.remove("diarization.rttm")
 
     # Read Audio file
     rate, data = wavfile.read(audio)
 
     # Create csv file from Dictionary
-    transcript_file = open(f"{filename}.csv", "w")
-    fieldnames = ["start", "end", "speaker", "transcript"]
-    writer = csv.DictWriter(transcript_file, fieldnames=fieldnames)
-    writer.writeheader()
+    # transcript_file = open(f"{filename}.csv", "w")
+    # fieldnames = ["start", "end", "speaker", "transcript", "named entity"]
+    dict = {}
+    # writer = csv.DictWriter(transcript_file, fieldnames=fieldnames)
+    # writer.writeheader()
 
     # Loop through all the rows in diarization csv
     for index, row in dair_csv.iterrows():
@@ -98,12 +102,19 @@ def combineFeatures(audio, filename="transcript"):
         # Sectioned audio data
         section = data[start_frame: end_frame]
         transcript = getTranscript(section, model=MODEL, processor=PROCESSOR)
-        sentence = [{"start": str(datetime.timedelta(seconds=start_t)), "end": str(datetime.timedelta(seconds=end_t)),
-                     "speaker": str(row['ID']), "transcript": str(transcript)}]
-        writer.writerows(sentence)
-    transcript_file.close()
+        namedEntity = ner(transcript)
+        dict[index] = {"start": str(datetime.timedelta(seconds=start_t)), "end": str(datetime.timedelta(seconds=end_t)),
+                     "speaker": str(row['ID']), "transcript": str(transcript), "named entity": str(namedEntity)}
+        # df_line = pd.DataFrame([[str(datetime.timedelta(seconds=start_t)), str(datetime.timedelta(seconds=end_t)), \
+        #                          str(row['ID']), str(namedEntity)]])
+        # df_sentences = df_sentences.append(df_line, ignore_index=True)
+        # writer.writerows(sentence)
+
+    # transcript_file.close()
+    with open(f"{filename}.json", "w") as jsonFile:
+        json.dump(dict, jsonFile)
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     audioname = "../PyannoteProj/Data/test.wav"
     combineFeatures(audioname)

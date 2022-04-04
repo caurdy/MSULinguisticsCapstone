@@ -20,6 +20,7 @@ ENTRYPOINT ["python", "-u", "./execute.py"]
 #EXPOSE 8000
 # CMD ["python", "./main.py"]
 
-# docker build -t cap .
-# docker run cap testing (testing is goig to be the argv[1])
-# docker run -v ${pwd}:/usr/src/app asr testing
+# docker build -t [Name of the image] .
+# e.g docker build -t cap .
+# docker run -v ${pwd}:/usr/src/app [Name of the image] [arg1] [arg2] [arg3]
+# e.g. docker run -v ${pwd}:/usr/src/app cap -t Atest.wav asr1 dia1
