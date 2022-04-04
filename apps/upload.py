@@ -6,7 +6,6 @@ import dash
 from dash.dependencies import Input, Output, State, ClientsideFunction
 from dash import dcc, html, dash_table, callback_context
 import os
-
 import pandas as pd
 from dash.exceptions import PreventUpdate
 

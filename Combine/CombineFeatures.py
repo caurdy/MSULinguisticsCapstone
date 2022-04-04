@@ -4,9 +4,15 @@ import csv
 from scipy.io import wavfile
 from pyannote.audio import pipelines
 from pyannote.audio import Model
-
+from transformers import Wav2Vec2ForCTC, Wav2Vec2CTCTokenizer, Wav2Vec2FeatureExtractor, Wav2Vec2Processor
 import os
 import datetime
+
+TOKENIZER = Wav2Vec2CTCTokenizer.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
+MODEL = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
+FEATURE_EXTRACTOR = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0,
+                                             do_normalize=True, return_attention_mask=False)
+PROCESSOR = Wav2Vec2Processor(feature_extractor=FEATURE_EXTRACTOR, tokenizer=TOKENIZER)
 
 # test using test.rttm
 #
@@ -91,7 +97,7 @@ def combineFeatures(audio, filename="transcript"):
         end_frame = int(rate * end_t)
         # Sectioned audio data
         section = data[start_frame: end_frame]
-        transcript = getTranscript(section)
+        transcript = getTranscript(section, model=MODEL, processor=PROCESSOR)
         sentence = [{"start": str(datetime.timedelta(seconds=start_t)), "end": str(datetime.timedelta(seconds=end_t)),
                      "speaker": str(row['ID']), "transcript": str(transcript)}]
         writer.writerows(sentence)
