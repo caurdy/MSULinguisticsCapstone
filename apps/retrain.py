@@ -4,6 +4,7 @@ import base64
 
 from dash.dependencies import Output, Input, State
 from dash import dcc, html, callback_context
+import os
 import json
 
 from dash.exceptions import PreventUpdate
@@ -134,7 +135,7 @@ def update_output(value):
 def selectModel(value, contents, clicks, filename, dropdown_options):
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
     if 'speech-dropdown' in changed_id:
-        return html.Div(html.H5(f'Speech Model set to {value}'))
+        return html.Div(html.H5(f'Speech Model set to {value}')), dropdown_options
     else:
         if contents:
             content_type, content_string = contents.split(',')
@@ -146,7 +147,7 @@ def selectModel(value, contents, clicks, filename, dropdown_options):
             except Exception as e:
                 print(e)
                 return html.Div([
-                    'There was an error processing this file.'])
+                    'There was an error processing this file.']), dropdown_options
         else:
             return [], dropdown_options
 
@@ -167,13 +168,14 @@ def selectModel(value, contents, clicks, filename, dropdown_options):
             decoded = base64.b64decode(content_string)
             try:
                 if '.uem' in filename:
-                    dropdown_options.append({f'MyModel{clicks}'})
+                    dropdown_options.append(f'MyModel{clicks}')
                     # Add Model to directory
-
+                    os.mkdir(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}')
+                    open(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}/{filename}', 'w')
                     return html.Div(html.H5(f'Speech Model set to MyModel{clicks}')), dropdown_options
             except Exception as e:
                 print(e)
                 return html.Div([
-                    'There was an error processing this file.'])
+                    'There was an error processing this file.']), dropdown_options
         else:
             return [], dropdown_options
