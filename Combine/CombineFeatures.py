@@ -1,15 +1,13 @@
 import pandas as pd
 from DataScience.SpeechToText import getTranscript
-from NamedEntityRecognition.ner import ner
 import csv
-import json
 from scipy.io import wavfile
 from pyannote.audio import pipelines
 from pyannote.audio import Model
 from transformers import Wav2Vec2ForCTC, Wav2Vec2CTCTokenizer, Wav2Vec2FeatureExtractor, Wav2Vec2Processor
 import os
 import datetime
-
+import time
 TOKENIZER = Wav2Vec2CTCTokenizer.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
 MODEL = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
 FEATURE_EXTRACTOR = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0,
@@ -72,8 +70,11 @@ pipeline.instantiate(initial_params)
 
 # audio: the directory of the audio file
 def combineFeatures(audio, filename="transcript"):
+
     # Create Diarization file using the audio file provided
+    diarization_time1 = time.perf_counter()
     diarization_result = pipeline(audio)
+    diarization_time2 = time.perf_counter()
     with open('diarization.rttm', 'w') as file:
         diarization_result.write_rttm(file)
 
@@ -87,13 +88,14 @@ def combineFeatures(audio, filename="transcript"):
     rate, data = wavfile.read(audio)
 
     # Create csv file from Dictionary
-    # transcript_file = open(f"{filename}.csv", "w")
-    # fieldnames = ["start", "end", "speaker", "transcript", "named entity"]
-    dict = {}
-    # writer = csv.DictWriter(transcript_file, fieldnames=fieldnames)
-    # writer.writeheader()
+    transcript_file = open(f"{filename}.csv", "w")
+    fieldnames = ["Start (sec.)", "End (sec.)", "Speaker", "Transcript", "Confidence"]
+    writer = csv.DictWriter(transcript_file, fieldnames=fieldnames)
+    writer.writeheader()
 
     # Loop through all the rows in diarization csv
+    total_conf = 0
+    process_begin_time = time.perf_counter()
     for index, row in dair_csv.iterrows():
         start_t = row['Start Time']
         end_t = start_t + row['Duration']
@@ -101,19 +103,22 @@ def combineFeatures(audio, filename="transcript"):
         end_frame = int(rate * end_t)
         # Sectioned audio data
         section = data[start_frame: end_frame]
-        transcript = getTranscript(section, model=MODEL, processor=PROCESSOR)
-        namedEntity = ner(transcript)
-        dict[index] = {"start": str(datetime.timedelta(seconds=start_t)), "end": str(datetime.timedelta(seconds=end_t)),
-                     "speaker": str(row['ID']), "transcript": str(transcript), "named entity": str(namedEntity)}
-        # df_line = pd.DataFrame([[str(datetime.timedelta(seconds=start_t)), str(datetime.timedelta(seconds=end_t)), \
-        #                          str(row['ID']), str(namedEntity)]])
-        # df_sentences = df_sentences.append(df_line, ignore_index=True)
-        # writer.writerows(sentence)
-
-    # transcript_file.close()
-    with open(f"{filename}.json", "w") as jsonFile:
-        json.dump(dict, jsonFile)
-
+        transcript, confidence = getTranscript(section, model=MODEL, processor=PROCESSOR)
+        total_conf += confidence
+        sentence = [{"Start (sec.)": str(start_t),
+                     "End (sec.)": str(end_t),
+                     "Speaker": str(row['ID']),
+                     "Transcript": str(transcript),
+                     "Confidence": str(confidence)}]
+        # sentence = [{"start": str(datetime.timedelta(seconds=round(start_t, 3))),
+        #              "end": str(datetime.timedelta(seconds=round(end_t, 3))),
+        #              "speaker": str(row['ID']),
+        #              "transcript": str(transcript)}]
+        writer.writerows(sentence)
+    process_end_time = time.perf_counter()
+    transcript_file.close()
+    avg_confidence = total_conf/len(dair_csv)
+    return round(diarization_time2 - diarization_time1, 3), round(process_end_time - process_begin_time, 3), avg_confidence
 
 if __name__ == "__main__":
     audioname = "../PyannoteProj/Data/test.wav"

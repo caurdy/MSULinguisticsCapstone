@@ -115,7 +115,8 @@ def parse_contents(contents, filename, date, cnt, store):
                 #     "assets/audio"),
                 # Attempt to make the file playable
 
-                combineFeatures(f'assets/{filename}', f'assets/transcript_{cnt}')
+                diarization_time, transcript_time, avg_conf = combineFeatures(f'assets/{filename}',
+                                                                              f'assets/transcript_{cnt}')
                 df = pd.read_csv(f'assets/transcript_{cnt}.csv')
                 # global var
                 archive = tuple((filename, f'transcript_{cnt}.csv',
@@ -153,6 +154,9 @@ def parse_contents(contents, filename, date, cnt, store):
             return store, html.Div([
                 html.H5(filename),
                 html.Button(html.Audio(id="audio", src=f'assets/{filename}', controls=True, autoPlay=False)),
+                html.Div('Transcription Time: ' + str(transcript_time) + " seconds"),
+                html.Div("Diarization Time: " + str(diarization_time) + " seconds"),
+                html.Div("Average ASR Confidence: " + str(round(avg_conf, 3)) + '%'),
                 html.Div(style={'padding': '2rem'}),
                 dash_table.DataTable(
 

@@ -56,19 +56,19 @@ sidebar = html.Div(
 
         ),
     ],
-    style=SIDEBAR_STYLE,className="nav-pills",
+    style=SIDEBAR_STYLE, className="nav-pills",
 )
 
 content = html.Div(id="page-content", children=[], style=CONTENT_STYLE)
 
-bar = html.Div(id='main-page-content',children=[
+bar = html.Div(id='main-page-content', children=[
 
-    #nav wrapper starts here
+    # nav wrapper starts here
     html.Div(
         children=[
-            #nav bar
+            # nav bar
             html.Nav(
-                #inside div
+                # inside div
                 html.Div(
                     children=[
                         html.A(
@@ -76,12 +76,12 @@ bar = html.Div(id='main-page-content',children=[
                             className='brand-logo',
                             href='/'
                         ),
-                        #ul list components
+                        # ul list components
                         html.Ul(
                             children=[
-                               html.Li(html.A('Upload a File', href='/upload')),
-                               html.Li(html.A('Select a Model', href='/page2')),
-                               html.Li(html.A('Trascript Archive', href='/page3')),
+                                html.Li(html.A('Upload a File', href='/upload')),
+                                html.Li(html.A('Select a Model', href='/page2')),
+                                html.Li(html.A('Trascript Archive', href='/page3')),
                             ],
                             id='nav-mobile',
                             className='right hide-on-med-and-down'
@@ -89,7 +89,7 @@ bar = html.Div(id='main-page-content',children=[
                         ),
                     ],
                     className='nav-wrapper',
-                ),style={'background-color':'#18453b'}),
+                ), style={'background-color': '#18453b'}),
 
         ],
         className='navbar-scroll'
@@ -109,7 +109,6 @@ app.layout = html.Div([
 
 @app.callback(Output("page-content", "children"),
               [Input("url", "pathname")])
-
 def display_page(pathname):
     if pathname == '/':
         return upload.layout
@@ -122,5 +121,6 @@ def display_page(pathname):
     else:
         return "404 Page Error! Please choose a link"
 
-if (__name__ == '__main__'):
+
+if __name__ == '__main__':
     app.run_server(debug=True, dev_tools_hot_reload=False)
