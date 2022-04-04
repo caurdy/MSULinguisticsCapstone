@@ -35,7 +35,7 @@ def getTranscript(audio, model, processor):
     #confidence = torch.sum(max_probs, dim=-1) / len(max_probs)
     predicted_ids = torch.argmax(logits, dim=-1)
     transcript = processor.batch_decode(predicted_ids)[0]
-    transcript = RPUNCT.punctuate(transcript)
+    #transcript = RPUNCT.punctuate(transcript)
     return transcript
 
 
