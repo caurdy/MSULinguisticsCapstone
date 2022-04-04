@@ -2,21 +2,20 @@ Databases:
   # tell pyannote.database where to find AMI wav files.
   # {uri} is a placeholder for the session name (eg. ES2004c).
   # you might need to update this line to fit your own setup.
-  AMI: ./ami/database/amicorpus/{uri}/audio/{uri}.Mix-Headset.wav
-
+  AMI: ./TrainingData/AMI_set/WAV_set/ami/database/amicorpus/{uri}/audio/{uri}.Mix-Headset.wav
 Protocols:
   AMI:
     SpeakerDiarization:
       only_words:
         train:
-            uri: ./lists/train.meetings.txt
-            annotation: ./only_words/rttms/train/{uri}.rttm
-            annotated: ./uems/train/{uri}.uem
+            uri: ./TrainingData/AMI_set/LIST_set/lists/train.meetings.txt
+            annotation: ./TrainingData/AMI_set/RTTM_set/only_words/rttms/train/{uri}.rttm
+            annotated: ./TrainingData/AMI_set/UEM_set/uems/train/{uri}.uem
         development:
-            uri: ./lists/dev.meetings.txt
-            annotation: ./only_words/rttms/dev/{uri}.rttm
-            annotated: ./uems/dev/{uri}.uem
+            uri: ./TrainingData/AMI_set/LIST_set/lists/dev.meetings.txt
+            annotation: ./TrainingData/AMI_set/RTTM_set/only_words/rttms/dev/{uri}.rttm
+            annotated: ./TrainingData/AMI_set/UEM_set/uems/dev/{uri}.uem
         test:
-            uri: ./lists/test.meetings.txt
-            annotation: ./only_words/rttms/test/{uri}.rttm
-            annotated: ./uems/test/{uri}.uem
+            uri: ./TrainingData/AMI_set/LIST_set/lists/test.meetings.txt
+            annotation: ./TrainingData/AMI_set/RTTM_set/only_words/rttms/test/{uri}.rttm
+            annotated: ./TrainingData/AMI_set/UEM_set/uems/test/{uri}.uem

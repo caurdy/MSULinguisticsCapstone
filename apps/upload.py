@@ -11,6 +11,7 @@ from dash.exceptions import PreventUpdate
 
 from starter import app
 from Combine.CombineFeatures import combineFeatures
+import time
 
 # external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -35,13 +36,14 @@ layout = html.Div([
                             'borderRadius': '5px',
                             'textAlign': 'center',
                             'margin': '10px',
-                            'margin-left': '300px',
+                            # 'margin-left': '300px',
                         }, )
 
         ]),
 
         # Allow multiple files to be uploaded
-        multiple=False
+        multiple=False,
+        style={'margin-left': '300px'}
     ),
     # ), n_clicks=0,
     #             style={
@@ -117,7 +119,8 @@ def parse_contents(contents, filename, date, cnt, store):
                                                                               f'assets/transcript_{cnt}')
                 df = pd.read_csv(f'assets/transcript_{cnt}.csv')
                 # global var
-                archive = tuple((filename, f'transcript_{cnt}.csv', datetime.datetime.now().strftime('%m/%d/%Y')))
+                archive = tuple((filename, f'transcript_{cnt}.csv',
+                                 datetime.datetime.now().strftime('%m/%d/%Y'), time.time()))
                 store.append(archive)
                 # df = pd.read_csv("assets/random.csv")
                 # print("COUNT: ", cnt)

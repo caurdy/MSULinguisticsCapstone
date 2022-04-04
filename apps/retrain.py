@@ -1,7 +1,19 @@
 # Add Model Retraining Page Here
 # GET BUTTONS
-from dash.dependencies import Input, Output, State
+import base64
+
+from dash.dependencies import Output, Input, State
 from dash import dcc, html, callback_context
+import json
+
+from dash.exceptions import PreventUpdate
+
+from PyannoteProj.data_preparation.saved_model import model_0, model_1
+# turn this into a pattern matching list build of the included models
+# from apps import asrtrain, diarizetrain
+
+# f = open('sample.json')
+# data = json.load(f)
 
 from starter import app
 
@@ -9,132 +21,159 @@ current_model_diarization = "Model-1-DIA"
 current_model_asr = "Model-1-ASR"
 
 layout = html.Div([
-    html.H1("Retraining the Models"),
-    # dcc.Upload(html.Button('Upload File'), id="upload-file"),
+    html.H1("Chose which aspect to retrain"),
 
     html.Hr(),
+
+    # dbc.DropdownMenu(
+    # label="Menu",
+    # children=[
+    #     dbc.DropdownMenu(
+    #     children=[
+    #         dbc.DropdownMenuItem("Item 1"),
+    #         dbc.DropdownMenuItem("Item 2"),
+    #     ],
+    #     ),
+    #     dbc.DropdownMenuItem("Item 2"),
+    #     dbc.DropdownMenuItem("Item 3"),
+    # ],
+    # ))
 
     # dcc.Upload(html.A('Upload File')),
 
-    # html.Hr(),
-
-    dcc.Upload(
-        id = "upload-file",
-        children = [
-        'Drag and Drop or ',
-        html.A('Select a Training File (.uem or .json)')
-    ], style={
-        'width': '100%',
-        'height': '60px',
-        'lineHeight': '60px',
-        'borderWidth': '1px',
-        'borderStyle': 'dashed',
-        'borderRadius': '5px',
-        'textAlign': 'center'
-        },
-        multiple= True
-    ),
+    dcc.Dropdown(['Speech to Text', 'Diarization'], id='asr-dropdown'),
 
     html.Hr(),
 
-    html.Div(id='output-data', children=[html.Div(f"Current ASR Model: {current_model_asr}", id="asr-output"),
-                                         html.Div(f"Current Diarization Model: {current_model_diarization}", id="dia-output")],
-             style= {'margin': '20px'}),
+    html.Div(id='asr-output', children=[]),
 
     html.Hr(),
-    html.Div(id="col_asr", n_clicks=0, title="Speech Recognition Models",
-             children=["Speech Recognition", html.Div(html.Button("Model 1 ASR", id='model1asr', n_clicks=0)),
-                       html.Div(html.Button("Model 2 ASR", id='model2asr', n_clicks=0))],
-             style={'margin': '20px'}),
-    html.Hr(),
-    html.Div(id="col_di", n_clicks=0, title="Speaker Diarization Models",
-             children=["Speaker Diarization", html.Div(html.Button("Model 1 DIA", id='model1dia', n_clicks=0)),
-                       html.Div(html.Button("Model 2 DIA", id='model2dia', n_clicks=0))],
-             style={'margin': '20px'}),
-    html.Hr()
 
 ],
-style={'margin-left': '300px'})
+    style={'margin-left': '300px'})
+
 
 @app.callback(Output('asr-output', 'children'),
-              Input('upload-file', 'contents'),
-              State('upload-file', 'filename'),
-              Input('model1asr', 'n_clicks'),
-              Input('model2asr', 'n_clicks'))
-
-
-def parse_contents(contents, filename, mod1, mod2):
-    if contents is not None and filename[0][-4:] != ".uem":
-        if filename[0][-4:] != "json":
-            return html.Div([
-                html.H5(f"File invalid. Please upload a .json file or select a pretrained Model")
-            ])
-
-        return html.Div([
-            html.H5(f"Current ASR model is being trained on: {filename[0]}"),
-        ])
-    else:
-        changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-        if 'model1asr' in changed_id:
-            mod = 'Model-1-ASR'
-            return html.Div([
-                html.H5(f"Current ASR model is: {mod}"),
-            ])
-        elif 'model2asr' in changed_id:
-            mod = 'Model-2-ASR'
-            return html.Div([
-                html.H5(f"Current ASR model is: {mod}"),
-            ])
-        else:
-            return html.Div([
-                html.H5(f"Current ASR model is: {current_model_asr}"),
-            ])
-
-
-@app.callback(Output('dia-output', 'children'),
-              Input('upload-file', 'contents'),
-              State('upload-file', 'filename'),
-              Input('model1dia', 'n_clicks'),
-              Input('model2dia', 'n_clicks'))
-
-
-def parse_contents(contents, filename, mod1, mod2):
-    if contents is not None and filename[0][-4:] != "json":
-        if filename[0][-3:] != "uem":
-            return html.Div([
-                html.H5(f"File invalid. Please upload a .uem file or select a pretrained Model")
-            ])
-        return html.Div([
-            html.H5(f"Current Diarization model is being trained on: {filename[0]}"),
-        ])
-    else:
-        changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-        if 'model1dia' in changed_id:
-            mod = 'Model-1-DIA'
-            return html.Div([
-                html.H5(f"Current DIA model is: {mod}"),
-            ])
-        elif 'model2dia' in changed_id:
-            mod = 'Model-2-DIA'
-            return html.Div([
-                html.H5(f"Current DIA model is: {mod}"),
-            ])
-        else:
-            return html.Div([
-                html.H5(f"Current DIA model is: {current_model_diarization}"),
-            ])
-
-@app.callback(
-    Output('container-button-timestamp', 'children'),
-    Input('model1', 'n_clicks'),
-    Input('model2', 'n_clicks'),
+              Input('asr-dropdown', 'value')
 )
-def displayClick(mod1, mod2):
-    changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-    if 'model1' in changed_id:
-        msg = 'Button 1 was most recently clicked'
-    elif 'model2' in changed_id:
-        msg = 'Button 2 was most recently clicked'
+def update_output(value):
+    if not value:
+        return []
     else:
-        msg = 'None of the buttons have been clicked yet'
-    return html.Div(msg)
+        if value == 'Speech to Text':
+            # return asrtrain.layout
+            return html.Div([html.H4("Select a Model or Upload a model"),
+                              html.Hr(),
+                              dcc.Dropdown(['Model1', 'Model2'], id='speech-dropdown'),
+                              dcc.Upload(
+                                  id='speech-model',
+                                  children=html.Div([
+                                      html.Button(id="asrtrainButt", children=[
+                                          'Drag and Drop or ',
+                                          html.A('Select File'), ], n_clicks=0,
+                                                  style={
+                                                      'width': '100%',
+                                                      'height': '60px',
+                                                      'lineHeight': '60px',
+                                                      'borderWidth': '1px',
+                                                      'borderStyle': 'dashed',
+                                                      'borderRadius': '5px',
+                                                      'textAlign': 'center',
+                                                      'margin': '10px',
+                                                      # 'margin-left': '300px',
+                                                  }, )
+
+                                  ]),
+
+                                  # Allow multiple files to be uploaded
+                                  multiple=False,
+                                  style={'margin-left': '300px'}
+                              ),
+                              html.Div(id='speech-output', children=[]),
+                              ])
+        else:
+            return html.Div([dcc.Dropdown(['PreModel1', 'PreModel2'], id='diary-dropdown'),
+                             html.Hr(),
+                             dcc.Upload(
+                                 id='diary-model',
+                                 children=html.Div([
+                                     html.Button(id="diarytrainButt", children=[
+                                         'Drag and Drop or ',
+                                         html.A('Select a .ckpt File'), ], n_clicks=0,
+                                                 style={
+                                                     'width': '100%',
+                                                     'height': '60px',
+                                                     'lineHeight': '60px',
+                                                     'borderWidth': '1px',
+                                                     'borderStyle': 'dashed',
+                                                     'borderRadius': '5px',
+                                                     'textAlign': 'center',
+                                                     'margin': '10px',
+                                                     # 'margin-left': '300px',
+                                                 }, )
+
+                                 ]),
+
+                                 # Allow multiple files to be uploaded
+                                 multiple=False,
+                                 style={'margin-left': '300px'}
+                             ),
+                             html.Div(id='diary-output', children=[]),
+                             ])
+    # return f'You have selected {value}'
+
+
+@app.callback(Output('speech-output', 'children'),
+              Output('speech-dropdown', 'options'),
+              Input('speech-dropdown', 'value'),
+              Input('speech-model', 'contents'),
+              Input('asrtrainButt', 'n_clicks'), # Use N_clicks to reDraw and name displayed Models
+              State('speech-model', 'filename'),
+              State('speech-dropdown', 'options'), # Use to append item to the dropdown
+              prevent_initial_callback=True,)
+def selectModel(value, contents, clicks, filename, dropdown_options):
+    changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+    if 'speech-dropdown' in changed_id:
+        return html.Div(html.H5(f'Speech Model set to {value}'))
+    else:
+        if contents:
+            content_type, content_string = contents.split(',')
+            decoded = base64.b64decode(content_string)
+            try:
+                if '.json' in filename:
+                    dropdown_options.append(f'MyModel{clicks}')
+                    return html.Div(html.H5(f'Speech Model set to MyModel{clicks}')), dropdown_options
+            except Exception as e:
+                print(e)
+                return html.Div([
+                    'There was an error processing this file.'])
+        else:
+            return [], dropdown_options
+
+@app.callback(Output('diary-output', 'children'),
+              Input('diary-dropdown', 'value'),
+              Input('diary-model', 'contents'),
+              Input('diarytrainButt', 'n_clicks'), # Use N_clicks to reDraw and name displayed Models
+              State('diary-model', 'filename'),
+              State('diary-dropdown', 'options'), # Use to append item to the dropdown
+              prevent_initial_callback=True,)
+def selectModel(value, contents, clicks, filename, dropdown_options):
+    changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+    if 'diary-dropdown' in changed_id:
+        return html.Div(html.H5(f'Speech Model set to {value}'))
+    else:
+        if contents:
+            content_type, content_string = contents.split(',')
+            decoded = base64.b64decode(content_string)
+            try:
+                if '.uem' in filename:
+                    dropdown_options.append({f'MyModel{clicks}'})
+                    # Add Model to directory
+
+                    return html.Div(html.H5(f'Speech Model set to MyModel{clicks}')), dropdown_options
+            except Exception as e:
+                print(e)
+                return html.Div([
+                    'There was an error processing this file.'])
+        else:
+            return [], dropdown_options
