@@ -1,4 +1,4 @@
-FROM python:3.8
+FROM python:3.8-slim as build
 
 WORKDIR /usr/src/app
 
@@ -6,19 +6,11 @@ COPY requirements.txt .
 COPY . /usr/src/app
 
 ENV PYTHONPATH /usr/src/app
+RUN apt-get update -y && apt-get install -y --no-install-recommends build-essential gcc libsndfile1
 
 RUN pip install -r requirements.txt
-# Below, installing pyannote
-RUN pip install https://github.com/pyannote/pyannote-audio/archive/develop.zip
-RUN apt-get update -y && apt-get install -y --no-install-recommends build-essential gcc \
-                                        libsndfile1
-#
+RUN pip install https://github.com/kpu/kenlm/archive/master.zip
 ENTRYPOINT ["python", "-u", "./execute.py"]
-#CMD ["./Combine/CombineFeatures.py"]
-
-#ENV NGIXN_WORKER_PROCESSES auto
-#EXPOSE 8000
-# CMD ["python", "./main.py"]
 
 # docker build -t [Name of the image] .
 # e.g docker build -t cap .

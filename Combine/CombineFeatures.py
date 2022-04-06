@@ -1,5 +1,5 @@
 import pandas as pd
-from DataScience.SpeechToText import getTranscript
+from DataScience.SpeechToTextHF import Wav2Vec2ASR
 from NamedEntityRecognition.ner import ner
 import json
 from scipy.io import wavfile
@@ -87,17 +87,19 @@ def combineFeatures(audio, filename="transcript"):
 
     # Read Audio file
     rate, data = wavfile.read(audio)
+    data = data.astype('float32')
 
-    # Create csv file from Dictionary
-    # transcript_file = open(f"{filename}.csv", "w")
-    # fieldnames = ["Start (sec.)", "End (sec.)", "Speaker", "Transcript", "Confidence"]
-    # writer = csv.DictWriter(transcript_file, fieldnames=fieldnames)
-    # writer.writeheader()
+    # Create directory to save transcript and other information
     dict = {}
 
     # Loop through all the rows in diarization csv
     total_conf = 0
     process_begin_time = time.perf_counter()
+
+    # Initialize ASR model
+    asr_model = Wav2Vec2ASR()
+    asr_model.loadModel("patrickvonplaten/wav2vec2-base-100h-with-lm")
+
     for index, row in dair_csv.iterrows():
         start_t = row['Start Time']
         end_t = start_t + row['Duration']
@@ -105,14 +107,15 @@ def combineFeatures(audio, filename="transcript"):
         end_frame = int(rate * end_t)
         # Sectioned audio data
         section = data[start_frame: end_frame]
-        transcript, confidence = getTranscript(section, model=MODEL, processor=PROCESSOR)
-        total_conf += confidence
+        # transcript, confidence = getTranscript(section, model=MODEL, processor=PROCESSOR)
+        # total_conf += confidence
+        transcript = asr_model.predict_segment(section)
         namedEntity = ner(transcript)
         dict[index] = {"Start (sec.)": str(start_t),
                      "End (sec.)": str(end_t),
                      "Speaker": str(row['ID']),
                      "Transcript": str(transcript),
-                     "Confidence": str(confidence),
+                     # "Confidence": str(confidence),
                      "Named Entity": str(namedEntity)}
         # sentence = [{"start": str(datetime.timedelta(seconds=round(start_t, 3))),
         #              "end": str(datetime.timedelta(seconds=round(end_t, 3))),
@@ -122,7 +125,7 @@ def combineFeatures(audio, filename="transcript"):
     process_end_time = time.perf_counter()
     # transcript_file.close()
     avg_confidence = total_conf/len(dair_csv)
-    with open(f"{filename}.json", "w") as jsonFile:
+    with open(f"./Transcriptions/{filename}.json", "w") as jsonFile:
         json.dump(dict, jsonFile)
     return round(diarization_time2 - diarization_time1, 3), round(process_end_time - process_begin_time, 3), avg_confidence
 
