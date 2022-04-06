@@ -1,46 +1,123 @@
-from pyannote.audio import pipelines
-import matplotlib.pyplot as plt
 from pyannote.audio import Model
-import numpy as np
-import yaml
 
-sad_scores = Model.from_pretrained("saved_model/model_0")
-emb_scores = Model.from_pretrained("pyannote/embedding")
+from PyannoteProj.voice_detect import *
+from PyannoteProj.OptimizingHyperParameter import *
+from PyannoteProj.database_loader import *
 
-
-pipeline = pipelines.SpeakerDiarization(segmentation=sad_scores,
-                                        embedding=emb_scores,
-                                        embedding_batch_size = 32)
-x = 2
-
-"""
-    onset=0.6: mark region as active when probability goes above 0.6
-    offset=0.4: switch back to inactive when probability goes below 0.4
-    min_duration_on=0.0: remove active regions shorter than that many seconds
-    min_duration_off=0.0: fill inactive regions shorter than that many seconds
-"""
-initial_params = {
-                "onset": 0.810,
-                "offset": 0.481,
-                "min_duration_on": 0.055,
-                "min_duration_off": 0.098,
-                "min_activity": 6.073,
-                "stitch_threshold": 0.040,
-                "clustering": {"method": "average", "threshold": 0.595},
-                 }
-pipeline.instantiate(initial_params)
-
-# input data
-diarization_result = pipeline("Data/test.wav")
-
-# write into the rttm file
-with open('test.rttm', 'w') as file:
-    diarization_result.write_rttm(file)
+from datetime import datetime
 
 
-from pyannote.core import notebook
-figure, ax = plt.subplots()
-notebook.plot_annotation(diarization_result, ax=ax, time=True, legend=True)
-figure.savefig('test_diarization.png')
+class SpeakerDiaImplement:
+    def __init__(self):
+        self.model = Model.from_pretrained('pyannote/segmentation')
+        print(type(self.model))
+        self.embedding = 'speechbrain/spkrec-ecapa-voxceleb'
+        self.pipline_parameter = {
+                                  "onset": 0.810, "offset": 0.481, "min_duration_on": 0.055,
+                                  "min_duration_off": 0.098,
+                                  "min_activity": 6.073, "stitch_threshold": 0.040,
+                                  "clustering": {"method": "average", "threshold": 0.595},
+                                 }
+
+    def AddPipeline(self, model_name: str, parameter_name: str):
+        sad_scores = Model.from_pretrained(model_name)
+        with open(parameter_name) as file:
+            initial_params = dict(json.load(file))
+
+        self.model = sad_scores
+        self.pipline_parameter = initial_params
+
+    def GetModelList(self):
+        folder = './data_preparation/saved_model'
+        folder = Path(folder).absolute()
+        sub_folders = [name for name in os.listdir(folder) if os.path.isdir(os.path.join(folder, name))]
+        return sub_folders
+
+    def GetModel(self):
+        return self.model
+
+    def GetPipline(self):
+        pipeline = pipelines.SpeakerDiarization(segmentation=self.model,
+                                                embedding=self.embedding)
+        pipeline.instantiate(self.pipline_parameter)
+        return pipeline
+
+    def SaveModel(self, ask_name):
+        now = datetime.now()
+        time_now = str(now.strftime("%m_%d_%Y_%H_%M_%S"))
+        os.mkdir('./data_preparation/saved_model/model_{}'.format(ask_name))
+        self.model.save_checkpoint("./data_preparation/saved_model/model_{}/seg_model.ckpt".format(ask_name))
+
+        folder = './data_preparation/saved_model'
+        folder = Path(folder).absolute()
+        sub_folders = [name for name in os.listdir(folder) if os.path.isdir(os.path.join(folder, name))]
+        sub_folders.append("model_{}".format(str(ask_name)))
+        with open("./data_preparation/saved_model/sample.json", "w") as outfile:
+            json.dump(sub_folders, outfile)
+
+    def SavePipelineParameter(self, ask_name):
+        now = datetime.now()
+        time_now = str(now.strftime("%m_%d_%Y_%H_%M_%S"))
+        with open("data_preparation/saved_model/model_{}/hyper_parameter.json".format(ask_name), "w") as outfile:
+            json.dump(self.pipline_parameter, outfile)
+
+    def Diarization(self, audio_name):
+        pipeline = self.GetPipline()
+        diarization_result = pipeline("Data/{}".format(audio_name))
+
+        # write into the rttm file
+        only_name = audio_name.split('.')[0]
+        file = open('OutputSet/{}.rttm'.format(only_name), 'w')
+        diarization_result.write_rttm(file)
+        print("{} done".format(only_name))
+
+    def TrainData(self, dataset_name, epoch_num=2):
+        trainer, der_pretrained, der_finetuned = Train(self.model, dataset_name, num_epoch=epoch_num)
+        print(trainer)
+        print("The previous segmentation error rate is '{}', and the new one is '{}'".format(der_pretrained * 100,
+                                                                                             der_finetuned * 100))
+
+        if der_finetuned * 100 < der_pretrained * 100:
+            opt = input("the model performance is greater than before. Do your Want to optimize parameter?: [y]/n")
+            if opt == 'y':
+                pass
+                # self.model = trainer
+                # new_paramter = Optimizing(self.model, dataset_name, num_opti_iteration=20, embedding_batch_size=8)
+                # self.pipline_parameter = new_paramter
+                # self.SaveModel()
+                # self.SavePipelineParameter()
+            else:
+                self.model = trainer
+
+                self.SaveModel("temp")
+                self.SavePipelineParameter("temp")
+        else:
+            checked_saved = input("Not too much performance, Do you still want to save that?: [y]/n")
+            if checked_saved == 'y':
+                # opt = input("Do your Want to optimize parameter?: [y]/n")
+                # if opt == 'y':
+                #     self.model = trainer
+                #     new_paramter = Optimizing(self.model, dataset_name, num_opti_iteration=20, embedding_batch_size=8)
+                #     self.pipline_parameter = new_paramter
+                #     self.SaveModel()
+                #     self.SavePipelineParameter()
+                # else:
+                self.model = trainer
+                self.SaveModel("temp")
+                self.SavePipelineParameter("temp")
+            else:
+                print('Drop out!')
+
+
+if __name__ == '__main__':
+    train = input("Trained? [y]/n :")
+    dia_pipeline = SpeakerDiaImplement()
+    dia_pipeline.AddPipeline(model_name="data_preparation/saved_model/model_03_25_2022_10_38_52/seg_model.ckpt",
+                             parameter_name="data_preparation/saved_model/model_03_25_2022_10_38_52/hyper_parameter.json")
+
+    if train == 'y':
+        dia_pipeline.TrainData('Talkbank', epoch_num=1)
+    else:
+        dia_pipeline.Diarization('Atest.wav')
 
 

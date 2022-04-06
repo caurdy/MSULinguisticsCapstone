@@ -1,0 +1,34 @@
+Databases:
+  AMI: ./data_preparation/TrainingData/AMI_set/WAV_set/ami/database/amicorpus/{uri}/audio/{uri}.Mix-Headset.wav
+  Talkbank: ./data_preparation/TrainingData/Talkbank/WAV_set/{uri}.wav
+Protocols:
+  AMI:
+    SpeakerDiarization:
+      only_words:
+        development:
+          annotated: ./data_preparation/TrainingData/AMI_set/UEM_set/uems/dev/{uri}.uem
+          annotation: ./data_preparation/TrainingData/AMI_set/RTTM_set/only_words/rttms/dev/{uri}.rttm
+          uri: ./data_preparation/TrainingData/AMI_set/LIST_set/lists/dev.meetings.txt
+        test:
+          annotated: ./data_preparation/TrainingData/AMI_set/UEM_set/uems/test/{uri}.uem
+          annotation: ./data_preparation/TrainingData/AMI_set/RTTM_set/only_words/rttms/test/{uri}.rttm
+          uri: ./data_preparation/TrainingData/AMI_set/LIST_set/lists/test.meetings.txt
+        train:
+          annotated: ./data_preparation/TrainingData/AMI_set/UEM_set/uems/train/{uri}.uem
+          annotation: ./data_preparation/TrainingData/AMI_set/RTTM_set/only_words/rttms/train/{uri}.rttm
+          uri: ./data_preparation/TrainingData/AMI_set/LIST_set/lists/train.meetings.txt
+  Talkbank:
+    SpeakerDiarization:
+      only_words:
+        development:
+          annotated: ./data_preparation/TrainingData/Talkbank/UEM_set/{uri}.uem
+          annotation: ./data_preparation/TrainingData/Talkbank/RTTM_set/{uri}.rttm
+          uri: ./data_preparation/TrainingData/Talkbank/LIST_set/dev.txt
+        test:
+          annotated: ./data_preparation/TrainingData/Talkbank/UEM_set/{uri}.uem
+          annotation: ./data_preparation/TrainingData/Talkbank/RTTM_set/{uri}.rttm
+          uri: ./data_preparation/TrainingData/Talkbank/LIST_set/test.txt
+        train:
+          annotated: ./data_preparation/TrainingData/Talkbank/UEM_set/{uri}.uem
+          annotation: ./data_preparation/TrainingData/Talkbank/RTTM_set/{uri}.rttm
+          uri: ./data_preparation/TrainingData/Talkbank/LIST_set/train.txt

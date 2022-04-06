@@ -10,6 +10,7 @@ import json
 from dash.exceptions import PreventUpdate
 
 from PyannoteProj.TestPipline import SpeakerDiaImplement
+from PyannoteProj.database_loader import CreateDatabase
 from PyannoteProj.data_preparation.saved_model import model_0, model_1
 # turn this into a pattern matching list build of the included models
 # from apps import asrtrain, diarizetrain
@@ -177,7 +178,7 @@ def selectModel(value, contents, clicks, filename):
             # Add Model to directory
 
 
-            #Createdatabase(filename) # This is training data
+            CreateDatabase(filename) # This is training data
             dia_pipeline = SpeakerDiaImplement()
             dia_pipeline.AddPipeline(model_name=f"data_preparation/saved_model/{value}/seg_model.ckpt",
                                      parameter_name=f"data_preparation/saved_model/{value}/hyper_parameter.json")

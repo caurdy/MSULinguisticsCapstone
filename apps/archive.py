@@ -91,18 +91,20 @@ def get_from_store(count, var_store, size):
 # try to form an object with an id that contains all present n_clicks?
 def displayClick(n_clicks, size, archive):
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-    if n_clicks != [0*len(transcripts)]:
+    if n_clicks != [0]*len(transcripts):
         index = int(changed_id[10:11])
         audio_path = archive[index][0]
         transcript_path = archive[index][1]
+        n_clicks.reverse()
         if int(n_clicks[index]) > 0 and 'tshow' in changed_id:
             if n_clicks[index] % 2 == 1:
                 df = pd.read_json(transcript_path)
+                n_clicks.reverse()
                 return html.Div([
                     html.Div([html.Hr(),
-                              html.H4(transcripts[index][1]),
+                              html.H4(archive[index][1]),
                               html.Div(html.Button(
-                                  html.Audio(id="audio", src=audio_path, controls=True,
+                                  html.Audio(id="audio", src=f'assets/{audio_path}', controls=True,
                                              autoPlay=False))),
                               html.Div(style={'padding': '2rem'}),
                               dash_table.DataTable(
@@ -129,5 +131,7 @@ def displayClick(n_clicks, size, archive):
                     html.Hr()])
             else:
                 return []
+        else:
+            return []
     else:
         return []
