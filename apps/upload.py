@@ -117,9 +117,11 @@ def parse_contents(contents, filename, date, cnt, store):
 
                 diarization_time, transcript_time, avg_conf = combineFeatures(f'assets/{filename}',
                                                                               f'assets/transcript_{cnt}')
-                df = pd.read_csv(f'assets/transcript_{cnt}.csv')
+                df = pd.read_json(f'assets/transcript_{cnt}.csv', orient = 'split')
+
+                # df.to_csv(f'assets/transcript_{cnt}.csv', encoding='utf-8', index=False)
                 # global var
-                archive = tuple((filename, f'transcript_{cnt}.csv',
+                archive = tuple((filename, f'transcript_{cnt}.json',
                                  datetime.datetime.now().strftime('%m/%d/%Y'), time.time()))
                 store.append(archive)
                 # df = pd.read_csv("assets/random.csv")

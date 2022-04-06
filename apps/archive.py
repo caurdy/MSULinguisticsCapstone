@@ -97,7 +97,7 @@ def displayClick(n_clicks, size, archive):
         if int(n_clicks[index]) > 0 and 'tshow' in changed_id:
             if n_clicks[index] % 2 == 1:
                 # changed_id = int(changed_id[6:-9])
-                df = pd.read_csv(f"assets/transcript_{index+1}.csv")
+                df = pd.read_csv(f"assets/transcript_{index+1}.json")
                 return html.Div([
                     html.Div([html.Hr(),
                               html.H4(transcripts[index][1]),

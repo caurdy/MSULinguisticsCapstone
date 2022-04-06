@@ -9,6 +9,7 @@ import json
 
 from dash.exceptions import PreventUpdate
 
+from PyannoteProj.TestPipline import SpeakerDiaImplement
 from PyannoteProj.data_preparation.saved_model import model_0, model_1
 # turn this into a pattern matching list build of the included models
 # from apps import asrtrain, diarizetrain
@@ -93,34 +94,39 @@ def update_output(value):
                               html.Div(id='speech-output', children=[]),
                               ])
         else:
-            return html.Div([dcc.Dropdown(['PreModel1', 'PreModel2'], id='diary-dropdown'),
-                             html.Hr(),
-                             dcc.Upload(
-                                 id='diary-model',
-                                 children=html.Div([
-                                     html.Button(id="diarytrainButt", children=[
-                                         'Drag and Drop or ',
-                                         html.A('Select a .ckpt File'), ], n_clicks=0,
-                                                 style={
-                                                     'width': '100%',
-                                                     'height': '60px',
-                                                     'lineHeight': '60px',
-                                                     'borderWidth': '1px',
-                                                     'borderStyle': 'dashed',
-                                                     'borderRadius': '5px',
-                                                     'textAlign': 'center',
-                                                     'margin': '10px',
-                                                     # 'margin-left': '300px',
-                                                 }, )
+            # Read from sample.json to get dropdown list
+            f = open('PyannoteProj/data_preparation/saved_model/sample.json')
+            data = json.load(f)
+            return html.Div([html.H4("Select a Base Model and Upload a Folder containing a LIST, RTTM, UEM, and WAV set"),
+                  html.Hr(),
 
-                                 ]),
+                  dcc.Dropdown(data, id='diary-dropdown'),
+                  dcc.Upload(
+                      id='diary-model',
+                      children=html.Div([
+                          html.Button(id="diarytrainButt", children=[
+                              'Drag and Drop or ',
+                              html.A('Select a Folder'), ], n_clicks=0,
+                                      style={
+                                          'width': '100%',
+                                          'height': '60px',
+                                          'lineHeight': '60px',
+                                          'borderWidth': '1px',
+                                          'borderStyle': 'dashed',
+                                          'borderRadius': '5px',
+                                          'textAlign': 'center',
+                                          'margin': '10px',
+                                          # 'margin-left': '300px',
+                                      }, )
 
-                                 # Allow multiple files to be uploaded
-                                 multiple=False,
-                                 style={'margin-left': '300px'}
-                             ),
-                             html.Div(id='diary-output', children=[]),
-                             ])
+                      ]),
+
+                      # Allow multiple files to be uploaded
+                      multiple=False,
+                      style={'margin-left': '300px'}
+                  ),
+                  html.Div(id='diary-output', children=[]),
+                  ])
     # return f'You have selected {value}'
 
 
@@ -142,7 +148,7 @@ def selectModel(value, contents, clicks, filename, dropdown_options):
             decoded = base64.b64decode(content_string)
             try:
                 if '.json' in filename:
-                    dropdown_options.append(f'MyModel{clicks}')
+                    # dropdown_options.append(f'MyModel{clicks}')
                     return html.Div(html.H5(f'Speech Model set to MyModel{clicks}')), dropdown_options
             except Exception as e:
                 print(e)
@@ -152,30 +158,37 @@ def selectModel(value, contents, clicks, filename, dropdown_options):
             return [], dropdown_options
 
 @app.callback(Output('diary-output', 'children'),
+              # Output('diary-dropdown', 'options'),
               Input('diary-dropdown', 'value'),
               Input('diary-model', 'contents'),
               Input('diarytrainButt', 'n_clicks'), # Use N_clicks to reDraw and name displayed Models
               State('diary-model', 'filename'),
-              State('diary-dropdown', 'options'), # Use to append item to the dropdown
+              # State('diary-dropdown', 'options'), # Use to append item to the dropdown
               prevent_initial_callback=True,)
-def selectModel(value, contents, clicks, filename, dropdown_options):
+def selectModel(value, contents, clicks, filename):
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-    if 'diary-dropdown' in changed_id:
-        return html.Div(html.H5(f'Speech Model set to {value}'))
+    # if 'diary-dropdown' in changed_id:
+    if value and contents:
+        content_type, content_string = contents.split(',')
+        decoded = base64.b64decode(content_string)
+        try:
+            # if '.uem' in filename:
+            # dropdown_options.append(f'MyModel{clicks}')
+            # Add Model to directory
+
+
+            #Createdatabase(filename) # This is training data
+            dia_pipeline = SpeakerDiaImplement()
+            dia_pipeline.AddPipeline(model_name=f"data_preparation/saved_model/{value}/seg_model.ckpt",
+                                     parameter_name=f"data_preparation/saved_model/{value}/hyper_parameter.json")
+
+
+            # os.mkdir(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}')
+            # open(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}/{filename}', 'w')
+            return html.Div(html.H5(f'Speech Model set to MyModel{clicks}'))
+        except Exception as e:
+            print(e)
+            return html.Div([
+                'There was an error processing this folder.'])
     else:
-        if contents:
-            content_type, content_string = contents.split(',')
-            decoded = base64.b64decode(content_string)
-            try:
-                if '.uem' in filename:
-                    dropdown_options.append(f'MyModel{clicks}')
-                    # Add Model to directory
-                    os.mkdir(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}')
-                    open(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}/{filename}', 'w')
-                    return html.Div(html.H5(f'Speech Model set to MyModel{clicks}')), dropdown_options
-            except Exception as e:
-                print(e)
-                return html.Div([
-                    'There was an error processing this file.']), dropdown_options
-        else:
-            return [], dropdown_options
+        return []
