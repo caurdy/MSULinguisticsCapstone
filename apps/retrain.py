@@ -8,7 +8,7 @@ import json
 
 from dash.exceptions import PreventUpdate
 
-from PyannoteProj.data_preparation.saved_model import model_0, model_1
+# from PyannoteProj.data_preparation.saved_model import model_0, model_1
 # turn this into a pattern matching list build of the included models
 # from apps import asrtrain, diarizetrain
 
