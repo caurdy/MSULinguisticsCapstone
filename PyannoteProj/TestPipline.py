@@ -4,13 +4,14 @@ from pyannote.audio import Model
 import numpy as np
 import yaml
 
-sad_scores = Model.from_pretrained("pyannote/model_0")
+sad_scores = Model.from_pretrained("saved_model/model_0")
 emb_scores = Model.from_pretrained("pyannote/embedding")
 
 
 pipeline = pipelines.SpeakerDiarization(segmentation=sad_scores,
                                         embedding=emb_scores,
                                         embedding_batch_size = 32)
+x = 2
 
 """
     onset=0.6: mark region as active when probability goes above 0.6
