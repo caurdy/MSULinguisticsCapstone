@@ -40,23 +40,23 @@ class SpeakerDiaImplement:
         pipeline.instantiate(self.pipline_parameter)
         return pipeline
 
-    def SaveModel(self):
+    def SaveModel(self, ask_name):
         now = datetime.now()
         time_now = str(now.strftime("%m_%d_%Y_%H_%M_%S"))
-        os.mkdir('./data_preparation/saved_model/model_{}'.format(time_now))
-        self.model.save_checkpoint("./data_preparation/saved_model/model_{}/seg_model.ckpt".format(time_now))
+        os.mkdir('./data_preparation/saved_model/model_{}'.format(ask_name))
+        self.model.save_checkpoint("./data_preparation/saved_model/model_{}/seg_model.ckpt".format(ask_name))
 
         folder = './data_preparation/saved_model'
         folder = Path(folder).absolute()
         sub_folders = [name for name in os.listdir(folder) if os.path.isdir(os.path.join(folder, name))]
-        sub_folders.append("model_{}".format(str(time_now)))
+        sub_folders.append("model_{}".format(str(ask_name)))
         with open("./data_preparation/saved_model/sample.json", "w") as outfile:
             json.dump(sub_folders, outfile)
 
-    def SavePipelineParameter(self):
+    def SavePipelineParameter(self, ask_name):
         now = datetime.now()
         time_now = str(now.strftime("%m_%d_%Y_%H_%M_%S"))
-        with open("data_preparation/saved_model/model_{}/hyper_parameter.json".format(time_now), "w") as outfile:
+        with open("data_preparation/saved_model/model_{}/hyper_parameter.json".format(ask_name), "w") as outfile:
             json.dump(self.pipline_parameter, outfile)
 
     def Diarization(self, audio_name):
@@ -74,6 +74,7 @@ class SpeakerDiaImplement:
         print(trainer)
         print("The previous segmentation error rate is '{}', and the new one is '{}'".format(der_pretrained * 100,
                                                                                              der_finetuned * 100))
+
         if der_finetuned * 100 < der_pretrained * 100:
             opt = input("the model performance is greater than before. Do your Want to optimize parameter?: [y]/n")
             if opt == 'y':
@@ -85,8 +86,9 @@ class SpeakerDiaImplement:
                 # self.SavePipelineParameter()
             else:
                 self.model = trainer
-                self.SaveModel()
-                self.SavePipelineParameter()
+
+                self.SaveModel("temp")
+                self.SavePipelineParameter("temp")
         else:
             checked_saved = input("Not too much performance, Do you still want to save that?: [y]/n")
             if checked_saved == 'y':
@@ -99,8 +101,8 @@ class SpeakerDiaImplement:
                 #     self.SavePipelineParameter()
                 # else:
                 self.model = trainer
-                self.SaveModel()
-                self.SavePipelineParameter()
+                self.SaveModel("temp")
+                self.SavePipelineParameter("temp")
             else:
                 print('Drop out!')
 
@@ -114,6 +116,6 @@ if __name__ == '__main__':
     if train == 'y':
         dia_pipeline.TrainData('Talkbank', epoch_num=1)
     else:
-        dia_pipeline.Diarization('')
+        dia_pipeline.Diarization('Atest.wav')
 
 
