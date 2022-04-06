@@ -144,6 +144,21 @@ class Wav2Vec2ASR:
 
         return transcription
 
+    # only used in CombineFeature since it passes through the audio object
+    def predict_segment(self, audio):
+
+        if self.model is None or self.processor is None:
+            raise Exception("Ensure both the Model and Processor are set")
+
+        input_values = self.processor(audio, sampling_rate=16_000, return_tensors="pt")
+
+        with torch.no_grad():
+
+            logits = self.model(**input_values).logits[0].cpu().numpy()
+            transcription = self.processor.decode(logits).text
+
+        return transcription
+
     def compute_metrics(self, pred):
         pred_logits = pred.predictions
         pred_ids = np.argmax(pred_logits, axis=-1)
