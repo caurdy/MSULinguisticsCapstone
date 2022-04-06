@@ -3,14 +3,13 @@ ASR predictions using non fine-tuned Wav2Vec2 model
 """
 import string
 import os
-
 import librosa
 import torch
 import time
 import jiwer
 import numpy as np
-import rpunct
-from transformers import  Wav2Vec2ForCTC, Wav2Vec2CTCTokenizer, Wav2Vec2FeatureExtractor, Wav2Vec2Processor
+#import rpunct
+from transformers import Wav2Vec2ForCTC, Wav2Vec2CTCTokenizer, Wav2Vec2FeatureExtractor, Wav2Vec2Processor
 from DataEngineering.CleanTranscript import cleanFile
 
 

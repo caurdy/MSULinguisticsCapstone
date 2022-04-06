@@ -39,9 +39,9 @@ def get_from_store(count, var_store, size):
         var_store.sort(key=lambda x: x[3], reverse=True)
         layout = []
         for i in var_store:
-            i = tuple((i[0], i[1], i[2]))
+            i = tuple((i[0], i[1], i[2], i[-1]))
             transcripts.append(i)
-            btn = html.Button('Show Transcript', id={'role': 'tshow', 'index' : f'{i[1][-5:-4]}'}, n_clicks=0,
+            btn = html.Button('Show Transcript', id={'role': 'tshow', 'index': f'{i[-1]}'}, n_clicks=0,
                               style={'display': 'inline-block'})
 
             btn_nlicks.append(btn)
@@ -72,7 +72,7 @@ def get_from_store(count, var_store, size):
                 ], style={'display': 'inline-block', 'margin': '10px', 'width': '120%', 'borderStyle': 'dashed',
                           'borderWidth': '1px', 'padding': '1rem'},
                 ),
-                html.Div(id={'role': 'display', 'index': f'{i[1][-5:-4]}'}, children=[])]))
+                html.Div(id={'role': 'display', 'index': f'{i[-1]}'}, children=[])]))
         btn_nlicks.append(id('tshow_1.n_clicks'))
         var_store.sort(reverse=True)
         return size, layout
@@ -91,18 +91,18 @@ def get_from_store(count, var_store, size):
 # try to form an object with an id that contains all present n_clicks?
 def displayClick(n_clicks, size, archive):
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-    # if changed_id == 'tshow_2.n_clicks':
     if n_clicks != [0*len(transcripts)]:
-        index = size['clicks']-int(changed_id[10:11])
+        index = int(changed_id[10:11])
+        audio_path = archive[index][0]
+        transcript_path = archive[index][1]
         if int(n_clicks[index]) > 0 and 'tshow' in changed_id:
             if n_clicks[index] % 2 == 1:
-                # changed_id = int(changed_id[6:-9])
-                df = pd.read_csv(f"assets/transcript_{index+1}.json")
+                df = pd.read_json(transcript_path)
                 return html.Div([
                     html.Div([html.Hr(),
                               html.H4(transcripts[index][1]),
                               html.Div(html.Button(
-                                  html.Audio(id="audio", src=f'assets/{transcripts[index][0]}', controls=True,
+                                  html.Audio(id="audio", src=audio_path, controls=True,
                                              autoPlay=False))),
                               html.Div(style={'padding': '2rem'}),
                               dash_table.DataTable(
