@@ -7,8 +7,35 @@ import pandas as pd
 from starter import app
 from Combine.CombineFeatures import combineFeatures
 import time
+from transformers import Wav2Vec2ForCTC, Wav2Vec2CTCTokenizer, Wav2Vec2FeatureExtractor, Wav2Vec2Processor
+from pyannote.audio import pipelines
+from pyannote.audio import Model
 
 var = tuple()
+
+tokenizer = Wav2Vec2CTCTokenizer.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
+model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
+feature_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0,
+                                             do_normalize=True, return_attention_mask=False)
+processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
+
+# Speech Diarization Configuration
+sad_scores = Model.from_pretrained("pyannote/segmentation")
+emb_scores = Model.from_pretrained("pyannote/embedding")
+
+pipeline = pipelines.SpeakerDiarization(segmentation=sad_scores,
+                                        embedding=emb_scores,
+                                        embedding_batch_size=32)
+initial_params = {
+    "onset": 0.810,
+    "offset": 0.481,
+    "min_duration_on": 0.055,
+    "min_duration_off": 0.098,
+    "min_activity": 6.073,
+    "stitch_threshold": 0.040,
+    "clustering": {"method": "average", "threshold": 0.595},
+}
+pipeline.instantiate(initial_params)
 
 layout = html.Div([
 
@@ -85,7 +112,10 @@ def parse_contents(contents, filename, date, cnt, store):
             elif '.wav' in filename:
                 transcript_filepath = f'assets/' + filename.replace('.wav', '.json')
                 transcripts, diarization_time, transcript_time, avg_conf = combineFeatures(f'assets/{filename}',
-                                                                                           transcript_filepath)
+                                                                                           transcript_filepath,
+                                                                                           model=model,
+                                                                                           processor=processor,
+                                                                                           diarization=pipeline)
                 # global var
                 archive = tuple((filename,
                                  transcript_filepath,

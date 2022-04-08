@@ -1,16 +1,14 @@
-
 import torch
 import librosa
 from datasets import load_metric, Dataset
 import pandas as pd
 import shutil
 from transformers import Wav2Vec2CTCTokenizer, Wav2Vec2FeatureExtractor, Wav2Vec2Processor, Wav2Vec2ForCTC, \
-                            TrainingArguments, Trainer, Wav2Vec2ProcessorWithLM
+    TrainingArguments, Trainer, Wav2Vec2ProcessorWithLM
 import numpy as np
 from pyctcdecode import build_ctcdecoder
 from typing import Dict, List, Optional, Union
 from dataclasses import dataclass
-
 
 
 @dataclass
@@ -83,9 +81,7 @@ class Wav2Vec2ASR:
         self.model = None
         self.wer_metric = load_metric("wer")
 
-
     def train(self, datafile, outputDir):
-
 
         if self.model is None or self.processor is None:
             raise Exception("Ensure both the Model and Processor are set")
@@ -126,19 +122,17 @@ class Wav2Vec2ASR:
             tokenizer=self.processor.feature_extractor,
         )
 
-        #trainer.train()
-
+        trainer.train()
 
     def predict(self, audio):
 
         if self.model is None or self.processor is None:
             raise Exception("Ensure both the Model and Processor are set")
-        input_audio, _ = librosa.load(audio, sr=16_000)
+        input_audio, _ = librosa.load(audio, sr=16000)
 
-        input_values = self.processor(input_audio, sampling_rate=16_000, return_tensors="pt")
+        input_values = self.processor(input_audio, sampling_rate=16000, return_tensors="pt")
 
         with torch.no_grad():
-
             logits = self.model(**input_values).logits[0].cpu().numpy()
             transcription = self.processor.decode(logits).text
 
@@ -153,7 +147,6 @@ class Wav2Vec2ASR:
         input_values = self.processor(audio, sampling_rate=16_000, return_tensors="pt")
 
         with torch.no_grad():
-
             logits = self.model(**input_values).logits[0].cpu().numpy()
             transcription = self.processor.decode(logits).text
 
@@ -198,7 +191,8 @@ class Wav2Vec2ASR:
     def processorFromPretrained(self, processor):
         self.processor = Wav2Vec2ProcessorWithLM.from_pretrained(processor)
 
-    def createProcessor(self, ngram, tokenizer: Wav2Vec2CTCTokenizer, featureExtractor : Wav2Vec2FeatureExtractor, vocab : list=None, ):
+    def createProcessor(self, ngram, tokenizer: Wav2Vec2CTCTokenizer, featureExtractor: Wav2Vec2FeatureExtractor,
+                        vocab: list = None, ):
 
         if vocab:
             labels = vocab
@@ -225,22 +219,20 @@ class Wav2Vec2ASR:
 
     def loadModel(self, location):
         self.model = Wav2Vec2ForCTC.from_pretrained(location)
-        self.processor = Wav2Vec2ProcessorWithLM.from_pretrained(location)
+        if 'lm' in location:
+            self.processor = Wav2Vec2ProcessorWithLM.from_pretrained(location)
+        else:
+            self.processor = Wav2Vec2Processor.from_pretrained(location)
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     # example use case
-
+    model = "facebook/wav2vec2-base-100h" #"patrickvonplaten/wav2vec2-base-100h-with-lm"
     asr_model = Wav2Vec2ASR()
-    asr_model.loadModel("patrickvonplaten/wav2vec2-base-100h-with-lm")
-    asr_model.train('../Data/corrected.json', '../Data/')
-    filename = "../Data/wav/0bb5bcb5-4688-42d5-8c4d-01170bce5f63.wav"
+    asr_model.loadModel(model)
+    asr_model.train('../Data/corrected_lessthan2_5KB.json', '../Data/')
+    filename = "../0hello_test.wav"
     transcript = asr_model.predict(filename)
     asr_model.saveModel("Data/Models/HFTest/")
     with open("hftest.txt", 'w') as output:
         output.write(transcript)
-
-
-
-
-
