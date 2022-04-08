@@ -12,6 +12,7 @@ from typing import Dict, List, Optional, Union
 from dataclasses import dataclass
 
 
+softmax_torch = torch.nn.Softmax(dim=-1)
 
 @dataclass
 class DataCollatorCTCWithPadding:
@@ -137,12 +138,16 @@ class Wav2Vec2ASR:
 
         input_values = self.processor(input_audio, sampling_rate=16_000, return_tensors="pt")
 
+        probs = softmax_torch(input_values.logits)
+        max_probs = torch.max(probs, dim=-1)[0]
+        confidence = (torch.sum(max_probs) / len(max_probs[0])).detach().numpy()
+
         with torch.no_grad():
 
             logits = self.model(**input_values).logits[0].cpu().numpy()
             transcription = self.processor.decode(logits).text
 
-        return transcription
+        return transcription, confidence
 
     # only used in CombineFeature since it passes through the audio object
     def predict_segment(self, audio):
@@ -152,12 +157,16 @@ class Wav2Vec2ASR:
 
         input_values = self.processor(audio, sampling_rate=16_000, return_tensors="pt")
 
+        probs = softmax_torch(input_values.logits)
+        max_probs = torch.max(probs, dim=-1)[0]
+        confidence = (torch.sum(max_probs) / len(max_probs[0])).detach().numpy()
+
         with torch.no_grad():
 
             logits = self.model(**input_values).logits[0].cpu().numpy()
             transcription = self.processor.decode(logits).text
 
-        return transcription
+        return transcription, confidence
 
     def compute_metrics(self, pred):
         pred_logits = pred.predictions
