@@ -114,12 +114,19 @@ class SpeakerDiaImplement:
 if __name__ == '__main__':
 
     train = input("Trained? [y]/n :")
+    f = open('./data_preparation/saved_model/sample.json')
+    data = json.load(f)
+    folder = './data_preparation/saved_model'
+    folder = Path(folder).absolute()
+    sub_folders = [name for name in os.listdir(folder) if os.path.isdir(os.path.join(folder, name))]
+    model_name = input('there are several models your can choose: {}'.format(sub_folders))
     dia_pipeline = SpeakerDiaImplement()
-    dia_pipeline.AddPipeline(model_name="data_preparation/saved_model/model_03_25_2022_10_38_52/seg_model.ckpt",
-                             parameter_name="data_preparation/saved_model/model_03_25_2022_10_38_52/hyper_parameter.json")
+    dia_pipeline.AddPipeline(model_name="data_preparation/saved_model/{}/seg_model.ckpt".format(model_name),
+                             parameter_name="data_preparation/saved_model/{}/hyper_parameter.json".format(model_name))
 
     if train == 'y':
-        dia_pipeline.TrainData('SampleData', epoch_num=5)
+        data_name = input('Given the data you want to retrain:')
+        dia_pipeline.TrainData(data_name, epoch_num=5)
     else:
         dia_pipeline.Diarization('Atest.wav')
 
