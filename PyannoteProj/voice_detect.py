@@ -70,6 +70,6 @@ def Train(model, data_name, num_epoch=2):
     der_finetuned = evaluation(model=finetuned, protocol=ami, subset="test")
     print(f"Local DER (finetuned) = {der_finetuned * 100:.1f}%")
 
-    return trainer, der_pretrained, der_finetuned
+    return trainer, finetuned, der_pretrained, der_finetuned
 
 
