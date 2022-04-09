@@ -30,3 +30,12 @@
     color: #858585;
     border-radius: 0px;
 }
+*[class="output-loading"][data-dash-is-loading="true"]{
+    visibility: hidden;
+}
+*[class="output-loading"][data-dash-is-loading="true"]::before{
+    content: "Loading...";
+    display: inline-block;
+    color: magenta;
+    visibility: visible;
+}

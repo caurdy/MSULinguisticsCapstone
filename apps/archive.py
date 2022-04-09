@@ -106,6 +106,9 @@ def displayClick(n_clicks, size, archive):
                               html.Div(html.Button(
                                   html.Audio(id="audio", src=f'assets/{audio_path}', controls=True,
                                              autoPlay=False))),
+                              html.Div(archive[index][4]),
+                              html.Div(archive[index][5]),
+                              html.Div(archive[index][6]),
                               html.Div(style={'padding': '2rem'}),
                               dash_table.DataTable(
 

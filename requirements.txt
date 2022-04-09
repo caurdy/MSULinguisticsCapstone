@@ -1,5 +1,5 @@
 https://github.com/pyannote/pyannote-audio/archive/develop.zip
-torch==1.10.2
+torch==1.11.2
 dash==2.3.1
 dash_bootstrap_components==1.0.3
 datasets==1.18.3

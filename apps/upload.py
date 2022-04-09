@@ -33,7 +33,7 @@ layout = html.Div([
         multiple=False,
         style={'margin-left': '300px'}
     ),
-    html.Div(id='output-div', children=[]),
+    html.Div(id='output-div', children=[], className='output-loading'),
     html.Div(id='output-data-upload', children=[]),
 
 ])
@@ -91,6 +91,9 @@ def parse_contents(contents, filename, date, cnt, store):
                                  transcript_filepath,
                                  datetime.datetime.now().strftime('%m/%d/%Y'),
                                  time.time(),
+                                 f'Transcription Time: {str(transcript_time)} seconds',
+                                 f"Diarization Time: {str(diarization_time)} seconds",
+                                 f"Average ASR Confidence: {str(round(avg_conf * 100, 2))}%",
                                  len(store)))
                 store.append(archive)
 
