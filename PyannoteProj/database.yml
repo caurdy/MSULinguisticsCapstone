@@ -1,5 +1,6 @@
 Databases:
   AMI: ./data_preparation/TrainingData/AMI_set/WAV_set/ami/database/amicorpus/{uri}/audio/{uri}.Mix-Headset.wav
+  SampleData: ./data_preparation/TrainingData/SampleData/WAV_set/{uri}.wav
   Talkbank: ./data_preparation/TrainingData/Talkbank/WAV_set/{uri}.wav
 Protocols:
   AMI:
@@ -17,6 +18,21 @@ Protocols:
           annotated: ./data_preparation/TrainingData/AMI_set/UEM_set/uems/train/{uri}.uem
           annotation: ./data_preparation/TrainingData/AMI_set/RTTM_set/only_words/rttms/train/{uri}.rttm
           uri: ./data_preparation/TrainingData/AMI_set/LIST_set/lists/train.meetings.txt
+  SampleData:
+    SpeakerDiarization:
+      only_words:
+        development:
+          annotated: ./data_preparation/TrainingData/SampleData/UEM_set/{uri}.uem
+          annotation: ./data_preparation/TrainingData/SampleData/RTTM_set/{uri}.rttm
+          uri: ./data_preparation/TrainingData/SampleData/LIST_set/dev.txt
+        test:
+          annotated: ./data_preparation/TrainingData/SampleData/UEM_set/{uri}.uem
+          annotation: ./data_preparation/TrainingData/SampleData/RTTM_set/{uri}.rttm
+          uri: ./data_preparation/TrainingData/SampleData/LIST_set/test.txt
+        train:
+          annotated: ./data_preparation/TrainingData/SampleData/UEM_set/{uri}.uem
+          annotation: ./data_preparation/TrainingData/SampleData/RTTM_set/{uri}.rttm
+          uri: ./data_preparation/TrainingData/SampleData/LIST_set/train.txt
   Talkbank:
     SpeakerDiarization:
       only_words:
