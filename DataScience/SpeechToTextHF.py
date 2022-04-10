@@ -227,11 +227,11 @@ class Wav2Vec2ASR:
 
 if __name__ == "__main__":
     # example use case
-    model = "facebook/wav2vec2-base-100h" #"patrickvonplaten/wav2vec2-base-100h-with-lm"
+    model = "patrickvonplaten/wav2vec2-base-100h-with-lm"
     asr_model = Wav2Vec2ASR()
     asr_model.loadModel(model)
-    asr_model.train('../Data/corrected_lessthan2_5KB.json', '../Data/')
-    filename = "../0hello_test.wav"
+    #asr_model.train('../Data/corrected_lessthan2_5KB.json', '../Data/')
+    filename = "../assets/0hello_test.wav"
     transcript = asr_model.predict(filename)
     asr_model.saveModel("Data/Models/HFTest/")
     with open("hftest.txt", 'w') as output:
