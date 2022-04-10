@@ -88,7 +88,7 @@ class Wav2Vec2ASR:
         self.wer_metric = load_metric("wer")
         self.usingLM = None
 
-    def train(self, datafile, outputDir):
+    def train(self, datafile, outputDir, num_epochs=30):
 
         if self.model is None or self.processor is None:
             raise Exception("Ensure both the Model and Processor are set")
@@ -106,7 +106,7 @@ class Wav2Vec2ASR:
             group_by_length=True,
             per_device_train_batch_size=32,
             evaluation_strategy="steps",
-            num_train_epochs=30,
+            num_train_epochs=num_epochs,
             gradient_checkpointing=True,
             save_steps=500,
             eval_steps=500,
