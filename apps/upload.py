@@ -13,8 +13,8 @@ from pyannote.audio import Model
 
 var = tuple()
 
-tokenizer = Wav2Vec2CTCTokenizer.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
-model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
+tokenizer = Wav2Vec2CTCTokenizer.from_pretrained("patrickvonplaten/wav2vec2_tiny_random") #facebook/wav2vec2-large-960h-lv60-self")
+model = Wav2Vec2ForCTC.from_pretrained("patrickvonplaten/wav2vec2_tiny_random") #"facebook/wav2vec2-large-960h-lv60-self")
 feature_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0,
                                              do_normalize=True, return_attention_mask=False)
 processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
@@ -115,7 +115,7 @@ def parse_contents(contents, filename, date, cnt, store):
                                                                                            transcript_filepath,
                                                                                            model=model,
                                                                                            processor=processor,
-                                                                                           diarization=pipeline)
+                                                                                           pipeline=pipeline)
                 # global var
                 archive = tuple((filename,
                                  transcript_filepath,

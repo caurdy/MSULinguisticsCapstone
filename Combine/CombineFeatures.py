@@ -29,7 +29,7 @@ final_info = [
 
 
 # audio: the directory of the audio file
-def combineFeatures(audio_path: str, transcript_path: str, model, processor, diarization):
+def combineFeatures(audio_path: str, transcript_path: str, model, processor, pipeline):
     # Create Diarization file using the audio_path file provided
     diarization_time1 = time.perf_counter()
     diarization_result = pipeline(audio_path)
@@ -102,4 +102,4 @@ if __name__ == "__main__":
     pipeline.instantiate(initial_params)
 
     audioname = "../0hello_test.wav"
-    combineFeatures(audioname, './test.json', MODEL, PROCESSOR)
+    combineFeatures(audioname, './test.json', MODEL, PROCESSOR, pipeline)
