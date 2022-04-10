@@ -11,6 +11,10 @@ from typing import Dict, List, Optional, Union
 from dataclasses import dataclass
 
 
+def softmax(logits):
+    e = np.exp(logits - np.max(logits))
+    return e / e.sum(axis=-1).reshape([logits.shape[0], 1])
+
 @dataclass
 class DataCollatorCTCWithPadding:
     """
@@ -80,6 +84,7 @@ class Wav2Vec2ASR:
         self.processor = None
         self.model = None
         self.wer_metric = load_metric("wer")
+        self.softmax_torch = torch.nn.Softmax(dim=-1)
 
     def train(self, datafile, outputDir):
 
@@ -130,13 +135,17 @@ class Wav2Vec2ASR:
             raise Exception("Ensure both the Model and Processor are set")
         input_audio, _ = librosa.load(audio, sr=16000)
 
-        input_values = self.processor(input_audio, sampling_rate=16000, return_tensors="pt")
+        input_values = self.processor(input_audio, sampling_rate=16000, return_tensors="pt", padding=True)
 
         with torch.no_grad():
             logits = self.model(**input_values).logits[0].cpu().numpy()
+            probs = softmax(logits)
+            max_probs = np.amax(probs, axis=1)
+            confidence = np.sum(max_probs) / len(max_probs)
+            print(confidence)
             transcription = self.processor.decode(logits).text
 
-        return transcription
+        return transcription, confidence
 
     # only used in CombineFeature since it passes through the audio object
     def predict_segment(self, audio):
@@ -148,9 +157,12 @@ class Wav2Vec2ASR:
 
         with torch.no_grad():
             logits = self.model(**input_values).logits[0].cpu().numpy()
+            probs = self.softmax_torch(logits)
+            max_probs = torch.max(probs, dim=-1)[0]
+            confidence = (torch.sum(max_probs) / len(max_probs[0])).detach().numpy()
             transcription = self.processor.decode(logits).text
 
-        return transcription
+        return transcription, confidence
 
     def compute_metrics(self, pred):
         pred_logits = pred.predictions
@@ -227,12 +239,13 @@ class Wav2Vec2ASR:
 
 if __name__ == "__main__":
     # example use case
-    model = "facebook/wav2vec2-base-100h" #"patrickvonplaten/wav2vec2-base-100h-with-lm"
+    model = "facebook/wav2vec2-base-100h"
+    #model = "patrickvonplaten/wav2vec2-base-100h-with-lm"
     asr_model = Wav2Vec2ASR()
     asr_model.loadModel(model)
-    asr_model.train('../Data/corrected_lessthan2_5KB.json', '../Data/')
+    #asr_model.train('../Data/corrected_lessthan2_5KB.json', '../Data/')
     filename = "../0hello_test.wav"
     transcript = asr_model.predict(filename)
-    asr_model.saveModel("Data/Models/HFTest/")
+    #asr_model.saveModel("Data/Models/HFTest/")
     with open("hftest.txt", 'w') as output:
         output.write(transcript)

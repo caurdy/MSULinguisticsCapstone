@@ -8,7 +8,7 @@ from pyannote.audio import Model
 from transformers import Wav2Vec2ForCTC, Wav2Vec2CTCTokenizer, Wav2Vec2FeatureExtractor, Wav2Vec2Processor
 import os
 import time
-
+from DataScience.SpeechToTextHF import Wav2Vec2ASR
 # test using test.rttm
 #
 # Steps
