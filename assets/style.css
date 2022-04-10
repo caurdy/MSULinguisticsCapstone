@@ -30,3 +30,13 @@
     color: #858585;
     border-radius: 0px;
 }
+*[data-dash-is-loading="true"]{
+    visibility: hidden;
+}
+*[data-dash-is-loading="true"]::before{
+    content: "Loading...";
+    color: magenta;
+    visibility: visible;
+    margin-top: 50%;
+    margin-left: 30%;
+}

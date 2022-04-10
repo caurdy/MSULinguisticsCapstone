@@ -25,6 +25,8 @@ current_model_asr = "Model-1-ASR"
 
 layout = html.Div([
     html.H1("Chose which aspect to retrain"),
+    # HINT
+
 
     html.Hr(),
 
@@ -44,7 +46,11 @@ layout = html.Div([
 
     # dcc.Upload(html.A('Upload File')),
 
-    dcc.Dropdown(['Speech to Text', 'Diarization'], id='asr-dropdown'),
+    dcc.Dropdown(['Speech to Text', 'Diarization'], id='asr-dropdown', style={'display': 'inline-block', 'width': '90%'}),
+    html.Button(html.Img(id='img', src='assets/qmark.png', style={'display': 'inline-block',
+                       'width': '30px', 'height': '20%',
+                       }),
+                id='hints', n_clicks=0),
 
     html.Hr(),
 
@@ -68,6 +74,7 @@ def update_output(value):
             return html.Div([html.H4("Select a Model or Upload a model"),
                               html.Hr(),
                               dcc.Dropdown(['Model1', 'Model2'], id='speech-dropdown'),
+                             html.Hr(),
                               dcc.Upload(
                                   id='speech-model',
                                   children=html.Div([
@@ -84,13 +91,14 @@ def update_output(value):
                                                       'textAlign': 'center',
                                                       'margin': '10px',
                                                       # 'margin-left': '300px',
-                                                  }, )
+                                                  },
+                                                  )
 
                                   ]),
 
                                   # Allow multiple files to be uploaded
-                                  multiple=False,
-                                  style={'margin-left': '300px'}
+                                  multiple=True,
+                                  # style={'margin-left': '300px'}
                               ),
                               html.Div(id='speech-output', children=[]),
                               ])
@@ -123,8 +131,8 @@ def update_output(value):
                       ]),
 
                       # Allow multiple files to be uploaded
-                      multiple=False,
-                      style={'margin-left': '300px'}
+                      multiple=True,
+                      # style={'margin-left': '300px'}
                   ),
                   html.Div(id='diary-output', children=[]),
                   ])
