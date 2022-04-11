@@ -1,15 +1,23 @@
 """
-Culmination of all the bullcrap, lets get it
+Combines ASR, Diarization, PuncRestoration and NER into one class
+If rpunct is throwing use_cuda issues (since you are running on cpu)
+change line 17 in punctuate.py to
+    self.model = NERModel("bert", "felflare/bert-restore-punctuation", labels=self.valid_labels, use_cuda=False,
+                            args={"silent": True, "max_seq_length": 512})
 """
-import os
 import time
 import json
 import librosa
 import pandas as pd
+import torch.cuda
+
 from DataScience.SpeechToTextHF import Wav2Vec2ASR
 from PyannoteProj.TestPipline import SpeakerDiaImplement
 from NamedEntityRecognition.ner import ner
 from fastpunct import FastPunct
+from rpunct import RestorePuncts
+
+rpunct = RestorePuncts()
 
 
 class ASRTimeAligner:
@@ -101,7 +109,10 @@ class ASRTimeAligner:
         for entry in transcript:
             sentence = entry["Transcript"].lower()
             time1 = time.perf_counter()
-            punc_restored = self.punctuationModel.punct(sentence)
+            if torch.cuda.is_available():
+                punc_restored = rpunct.punctuate(sentence, lang="en")
+            else:
+                punc_restored = self.punctuationModel.punct(sentence)
             time2 = time.perf_counter()
             namedEntity = ner(punc_restored)
             time3 = time.perf_counter()
@@ -115,7 +126,7 @@ class ASRTimeAligner:
 
 
 if __name__ == '__main__':
-    file = '../assets/short_audio3.wav'
+    file = '../assets/0hello_test.wav'
     timeAligner = ASRTimeAligner()
-    # timeAligner.timeAlign(file)
+    timeAligner.timeAlign(file)
     timeAligner.getEntitiesLastTranscript()
