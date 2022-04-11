@@ -11,10 +11,10 @@ var = tuple()
 timeAligner = ASRTimeAligner(diarizationModelPath="PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52")
 
 layout = html.Div([
-    html.H3("Upload Audio (.wav) Files for Transcription"),
     dcc.Upload(
         id='upload-data',
         children=html.Div([
+            html.H3("Upload Audio (.wav) Files for Transcription"),
             html.Button(id="upload", children=[
                 'Drag and Drop or ',
                 html.A('Select File'), ], n_clicks=0,
@@ -137,8 +137,7 @@ def parse_contents(contents, filename, date, cnt, store):
 def thePunctuator(clicks):
     if clicks > 0:
         transcripts, punc_time, ner_time = timeAligner.getEntitiesLastTranscript()
-        for entry in transcripts:
-            del entry['Confidence']
+
         return html.Div([
             html.Div('Named Entity Recognition Time: ' + str(round(ner_time, 3)) + " seconds"),
             html.Div("Punctuation Restoration Time: " + str(round(punc_time, 3)) + " seconds"),
