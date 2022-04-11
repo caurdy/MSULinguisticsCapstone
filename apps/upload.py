@@ -11,7 +11,7 @@ var = tuple()
 timeAligner = ASRTimeAligner(diarizationModelPath="PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52")
 
 layout = html.Div([
-
+    html.H3("Upload Audio (.wav) Files for Transcription"),
     dcc.Upload(
         id='upload-data',
         children=html.Div([
@@ -35,7 +35,7 @@ layout = html.Div([
     ),
     html.Div(id='output-div', children=[], className='output-loading'),
     html.Div(id='output-data-upload', children=[]),
-
+    html.Div(id='output-data-punc', children=[])
 ])
 
 
@@ -55,7 +55,6 @@ def display_output(list_of_contents, n_clicks, list_of_names, list_of_dates, dat
 
     if list_of_contents is not None:
         click = click or {'clicks': 0}
-
         click['clicks'] = click['clicks'] + 1
         n_clicks = click['clicks']
         children = [
@@ -76,7 +75,8 @@ def parse_contents(contents, filename, date, cnt, store):
         try:
             if '.wav' in filename:
                 transcript_filepath = f'assets/' + filename.replace('.wav', '.json')
-                transcripts, diarization_time, transcript_time, avg_conf = timeAligner.timeAlign(f'assets/{filename}', 'assets/')
+                transcripts, diarization_time, transcript_time, avg_conf = timeAligner.timeAlign(f'assets/{filename}',
+                                                                                                 'assets/')
                 # global var
                 archive = tuple((filename,
                                  transcript_filepath,
@@ -117,6 +117,7 @@ def parse_contents(contents, filename, date, cnt, store):
                     ),
 
                     html.Hr(),  # horizontal line
+                    html.Button('Restore Punctutation & Generate NER', id='thepunctuator', n_clicks=0),
                 ],
                     style={'margin-left': '300px'}
                 )
@@ -126,3 +127,38 @@ def parse_contents(contents, filename, date, cnt, store):
             return store, html.Div([
                 'There was an error processing this file.'
             ])
+
+
+@app.callback(
+    Output('output-data-punc', 'children'),
+    Input('thepunctuator', 'n_clicks'),
+    prevent_initial_callback=True
+)
+def thePunctuator(clicks):
+    if clicks > 0:
+        transcripts, punc_time, ner_time = timeAligner.getEntitiesLastTranscript()
+        for entry in transcripts:
+            del entry['Confidence']
+        return html.Div([
+            html.Div('Named Entity Recognition Time: ' + str(round(ner_time, 3)) + " seconds"),
+            html.Div("Punctuation Restoration Time: " + str(round(punc_time, 3)) + " seconds"),
+            dash_table.DataTable(
+                transcripts,
+                [{'name': i, 'id': i} for i in transcripts[0].keys()],
+                css=[{
+                    'selector': '.dash-spreadsheet td div',
+                    'rule': '''
+                            line-height: 15px;
+                            max-height: 30px; min-height: 30px; height: 30px;
+                            display: block;
+                            overflow-y: hidden;
+                            '''
+                }],
+                style_data={
+                    'whiteSpace': 'normal',
+                    'height': 'auto',
+                    'lineHeight': '15px'
+                },
+                style_cell={'textAlign': 'left'},
+                style_table={'textAlign': 'center', 'width': '1050px'},
+            ), ], style={'margin-left': '300px'})
