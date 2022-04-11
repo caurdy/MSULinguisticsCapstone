@@ -35,7 +35,7 @@
 }
 *[data-dash-is-loading="true"]::before{
     content: "Loading...";
-    color: magenta;
+    color: #18453b;
     visibility: visible;
     margin-top: 50%;
     margin-left: 30%;

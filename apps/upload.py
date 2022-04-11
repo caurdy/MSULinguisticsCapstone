@@ -13,8 +13,10 @@ from pyannote.audio import Model
 
 var = tuple()
 
-tokenizer = Wav2Vec2CTCTokenizer.from_pretrained("patrickvonplaten/wav2vec2_tiny_random") #facebook/wav2vec2-large-960h-lv60-self")
-model = Wav2Vec2ForCTC.from_pretrained("patrickvonplaten/wav2vec2_tiny_random") #"facebook/wav2vec2-large-960h-lv60-self")
+tokenizer = Wav2Vec2CTCTokenizer.from_pretrained(
+    "patrickvonplaten/wav2vec2_tiny_random")  # facebook/wav2vec2-large-960h-lv60-self")
+model = Wav2Vec2ForCTC.from_pretrained(
+    "patrickvonplaten/wav2vec2_tiny_random")  # "facebook/wav2vec2-large-960h-lv60-self")
 feature_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0,
                                              do_normalize=True, return_attention_mask=False)
 processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
@@ -38,7 +40,7 @@ initial_params = {
 pipeline.instantiate(initial_params)
 
 layout = html.Div([
-
+    html.H3("Upload a file to transcribe", style={'margin-left': '300px'}),
     dcc.Upload(
         id='upload-data',
         children=html.Div([
@@ -157,11 +159,11 @@ def parse_contents(contents, filename, date, cnt, store):
                 html.Button(html.Audio(id="audio", src=f'assets/{filename}', controls=True, autoPlay=False)),
                 html.Div('Transcription Time: ' + str(transcript_time) + " seconds"),
                 html.Div("Diarization Time: " + str(diarization_time) + " seconds"),
-                html.Div("Average ASR Confidence: " + str(round(avg_conf*100, 2)) + '%'),
+                html.Div("Average ASR Confidence: " + str(round(avg_conf * 100, 2)) + '%'),
                 html.Div(style={'padding': '2rem'}),
                 dash_table.DataTable(
-                    #df.to_dict('records'),
-                    #[{'name': i, 'id': i} for i in df.columns],
+                    # df.to_dict('records'),
+                    # [{'name': i, 'id': i} for i in df.columns],
                     transcripts,
                     [{'name': i, 'id': i} for i in transcripts[0].keys()],
                     css=[{
