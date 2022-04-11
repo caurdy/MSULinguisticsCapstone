@@ -8,46 +8,42 @@ import librosa
 import pandas as pd
 from DataScience.SpeechToTextHF import Wav2Vec2ASR
 from PyannoteProj.TestPipline import SpeakerDiaImplement
-from NamedEntityRecognition import ner
-# import rpunct
+from NamedEntityRecognition.ner import ner
+from fastpunct import FastPunct
 
 
 class ASRTimeAligner:
     """
     Creates time aligned transcripts from audio file with ability for punctuation restoration and NER tagging
     """
-    __slots__ = ['asrModel', 'diarizationModel', 'punctuationModel', 'nerModel']
-    # RPUNCT = rpunct.RestorePunctuation()
+    __slots__ = ['asrModel', 'diarizationModel', 'punctuationModel', 'nerModel', 'transcripts']
 
-    def __init__(self, asrModel: Wav2Vec2ASR = None,
-                 diarizationModelPath: str = "../PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52",
+    def __init__(self, asrModel="facebook/wav2vec2-large-960h-lv60-self",
+                 diarizationModelPath="../PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52",
                  punctuationModel=None,
                  nerModel=None):
         """
-        :param asrModel: Wav2Vec2ASR object
+        :param asrModel: Wav2Vec2ASR model path
         :param diarizationModelPath: Directory name of saved diarization model
         :param punctuationModel: Punctuation Model
         :param nerModel: NER model
         """
-        if asrModel:
-            self.asrModel = asrModel
-        else:
-            self.asrModel = Wav2Vec2ASR()
-            self.asrModel.loadModel("facebook/wav2vec2-large-960h-lv60-self")
-
+        self.asrModel = Wav2Vec2ASR()
+        self.asrModel.loadModel(asrModel)
         self.diarizationModel = SpeakerDiaImplement()
         self.diarizationModel.AddPipeline(model_name="{}/seg_model.ckpt".format(diarizationModelPath),
                                           parameter_name="{}/hyper_parameter.json".format(diarizationModelPath))
         if punctuationModel:
             self.punctuationModel = punctuationModel
         else:
-            # self.punctuationModel = RPUNCT
-            pass
+            self.punctuationModel = FastPunct()
 
         if nerModel:
             self.nerModel = nerModel
         else:
-            pass
+            self.nerModel = ner
+
+        self.transcripts = []
 
     def timeAlign(self, audioPath: str, outputDir: str = '.'):
         """
@@ -57,7 +53,6 @@ class ASRTimeAligner:
         :param audioPath: str path to
         :return:
         """
-
         diarization_time1 = time.perf_counter()
         rttm_path = self.diarizationModel.Diarization(audioPath)
         diarization_time2 = time.perf_counter()
@@ -87,22 +82,40 @@ class ASRTimeAligner:
                                    "Speaker": str(row['ID']),
                                    "Transcript": str(transcript),
                                    "Confidence": str(confidence), })
-            # namedEntity = self.nerModel(transcription)
-            # "Named Entity": str(namedEntity)})
 
         process_end_time = time.perf_counter()
-        transcript_path = os.path.join(outputDir, audioPath.replace('.wav', '.json'))
+        transcript_path = audioPath.replace('.wav', '.json')
         with open(transcript_path, "w") as jsonFile:
             json.dump(transcriptions, jsonFile)
 
         diarization_time = round(diarization_time2 - diarization_time1, 3)
         transcription_time = round(process_end_time - process_begin_time, 3)
         avg_confidence = total_conf / len(dair_csv)
-
+        self.transcripts.append(transcriptions)
         return transcriptions, diarization_time, transcription_time, avg_confidence
+
+    def getEntitiesLastTranscript(self):
+        transcript = self.transcripts[-1]
+        punc_time = 0
+        ner_time = 0
+        for entry in transcript:
+            sentence = entry["Transcript"].lower()
+            time1 = time.perf_counter()
+            punc_restored = self.punctuationModel.punct(sentence)
+            time2 = time.perf_counter()
+            namedEntity = ner(punc_restored)
+            time3 = time.perf_counter()
+            entry["Transcript"] = punc_restored
+            entry["Named Entities"] = str(namedEntity)
+            punc_time += time2 - time1
+            ner_time += time3 - time2
+
+        self.transcripts[-1] = transcript
+        return transcript, punc_time, ner_time
 
 
 if __name__ == '__main__':
-    file = '../0hello_test.wav'
+    file = '../assets/short_audio3.wav'
     timeAligner = ASRTimeAligner()
-    timeAligner.timeAlign(file)
+    # timeAligner.timeAlign(file)
+    timeAligner.getEntitiesLastTranscript()
