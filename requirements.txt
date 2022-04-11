@@ -18,3 +18,4 @@ SoundFile==0.10.3.post1
 transformers==4.18.0
 pypi-kenlm
 speechbrain
+dash_uploader
