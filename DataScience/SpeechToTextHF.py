@@ -81,7 +81,7 @@ class Wav2Vec2ASR:
         self.model = None
         self.wer_metric = load_metric("wer")
 
-    def train(self, datafile, outputDir):
+    def train(self, datafile, outputDir, num_epochs=30):
 
         if self.model is None or self.processor is None:
             raise Exception("Ensure both the Model and Processor are set")
@@ -99,7 +99,7 @@ class Wav2Vec2ASR:
             group_by_length=True,
             per_device_train_batch_size=32,
             evaluation_strategy="steps",
-            num_train_epochs=30,
+            num_train_epochs=num_epochs,
             gradient_checkpointing=True,
             save_steps=500,
             eval_steps=500,
@@ -227,11 +227,11 @@ class Wav2Vec2ASR:
 
 if __name__ == "__main__":
     # example use case
-    model = "facebook/wav2vec2-base-100h" #"patrickvonplaten/wav2vec2-base-100h-with-lm"
+    model = "patrickvonplaten/wav2vec2-base-100h-with-lm"
     asr_model = Wav2Vec2ASR()
     asr_model.loadModel(model)
-    asr_model.train('../Data/corrected_lessthan2_5KB.json', '../Data/')
-    filename = "../0hello_test.wav"
+    #asr_model.train('../Data/corrected_lessthan2_5KB.json', '../Data/')
+    filename = "../assets/0hello_test.wav"
     transcript = asr_model.predict(filename)
     asr_model.saveModel("Data/Models/HFTest/")
     with open("hftest.txt", 'w') as output:
