@@ -11,10 +11,10 @@ var = tuple()
 timeAligner = ASRTimeAligner(diarizationModelPath="PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52")
 
 layout = html.Div([
+    html.H3("Upload Audio (.wav) Files for Transcription", style={'margin-left': '300px'}),
     dcc.Upload(
         id='upload-data',
         children=html.Div([
-            html.H3("Upload Audio (.wav) Files for Transcription"),
             html.Button(id="upload", children=[
                 'Drag and Drop or ',
                 html.A('Select File'), ], n_clicks=0,
