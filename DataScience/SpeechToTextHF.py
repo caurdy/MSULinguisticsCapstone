@@ -151,16 +151,16 @@ class Wav2Vec2ASR:
         with torch.no_grad():
             if self.usingLM:
                 input_values = self.processor(audioArray, sampling_rate=16000, return_tensors="pt")
-                if torch.cuda.is_available():
-                    input_values = input_values.to('cuda')
+                #if torch.cuda.is_available():
+                #    input_values = input_values.to('cuda')
                 logits = self.model(**input_values).logits[0].cpu().numpy()
                 transcription = self.processor.decode(logits).text
 
             else:
                 input_values = self.processor(torch.tensor(audioArray), sampling_rate=16000, return_tensors="pt",
                                               padding=True).input_values
-                if torch.cuda.is_available():
-                    input_values = input_values.to('cuda')
+                #if torch.cuda.is_available():
+                #    input_values = input_values.to('cuda')
                 logits = self.model(input_values).logits
                 predicted_ids = torch.argmax(logits, dim=-1)
                 transcription = self.processor.batch_decode(predicted_ids)[0]
@@ -237,10 +237,10 @@ class Wav2Vec2ASR:
         self.processor.save_pretrained(location)
 
     def loadModel(self, location):
-        if torch.cuda.is_available():
-            self.model = Wav2Vec2ForCTC.from_pretrained(location).to("cuda")
-        else:
-            self.model = Wav2Vec2ForCTC.from_pretrained(location)
+        # torch.cuda.is_available():
+            #self.model = Wav2Vec2ForCTC.from_pretrained(location).to("cuda")
+        #else:
+        self.model = Wav2Vec2ForCTC.from_pretrained(location)
         if 'lm' in location:
             self.processor = Wav2Vec2ProcessorWithLM.from_pretrained(location)
             self.usingLM = True
@@ -251,12 +251,12 @@ class Wav2Vec2ASR:
 
 if __name__ == "__main__":
     # example use case
-    #model = "patrickvonplaten/wav2vec2-base-100h-with-lm"
+    # model = "patrickvonplaten/wav2vec2-base-100h-with-lm"
     model = "facebook/wav2vec2-large-960h-lv60-self"
     asr_model = Wav2Vec2ASR()
     asr_model.loadModel(model)
 
-    #asr_model.train('../Data/correctedShort.json', '../Data/', 3)
+    # asr_model.train('../Data/correctedShort.json', '../Data/', 3)
     filename = "../assets/0hello_test.wav"
     transcript, _ = asr_model.predict(filename)
     basePath = os.path.dirname(os.path.abspath(__file__))

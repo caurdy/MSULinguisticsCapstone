@@ -1,7 +1,7 @@
 # Add Transcript Archive here
 # Have wav and associated csv and be able to view full csv
 from dash.dependencies import Input, Output, State
-from dash import html, callback_context, dash_table, MATCH, ALL
+from dash import html, callback_context, dash_table, MATCH, ALL, dcc
 import datetime
 import pandas as pd
 
@@ -12,12 +12,14 @@ button = html.A(html.Button('Show Transcript', id="dispaly"), href="/", style={}
 # row =
 transcripts = []
 btn_nlicks = []
+downloadable = []
 
 layout = html.Div([
     html.H1("Transcript Archive"),
     html.Button("Get Stored Data", id='loader', n_clicks=0),
     html.Div(id='load', children=[]),
     html.Div(id='chosen', children=[]),
+    dcc.Download(id="download-dataframe-xlsx"),
 ],
     style={'margin-left': '300px'})
 
@@ -43,7 +45,7 @@ def get_from_store(count, var_store, size):
             transcripts.append(i)
             btn = html.Button('Show Transcript', id={'role': 'tshow', 'index': f'{i[-1]}'}, n_clicks=0,
                               style={'display': 'inline-block'})
-
+            #btn2 = html.Button("Download Transcript", id="btn_xlsx")
             btn_nlicks.append(btn)
             layout.append(
                 html.Div([
@@ -67,8 +69,8 @@ def get_from_store(count, var_store, size):
                                     'borderStyle': 'dashed',
                                     'borderWidth': '2px',
                                     'textAlign': 'center'}),
-
                     btn,
+                    #btn2
                 ], style={'display': 'inline-block', 'margin': '10px', 'width': '120%', 'borderStyle': 'dashed',
                           'borderWidth': '1px', 'padding': '1rem'},
                 ),
@@ -99,6 +101,7 @@ def displayClick(n_clicks, size, archive):
         if int(n_clicks[index]) > 0 and 'tshow' in changed_id:
             if n_clicks[index] % 2 == 1:
                 df = pd.read_json(transcript_path)
+                downloadable.append(df)
                 n_clicks.reverse()
                 return html.Div([
                     html.Div([html.Hr(),
@@ -130,6 +133,7 @@ def displayClick(n_clicks, size, archive):
                                   },
                                   style_cell={'textAlign': 'left'},
                                   style_table={'textAlign': 'center', 'width': '1050px'},
+                                  editable=True,
                               ), ]),
                     html.Hr()])
             else:
@@ -138,3 +142,12 @@ def displayClick(n_clicks, size, archive):
             return []
     else:
         return []
+
+
+@app.callback(
+    Output("download-dataframe-xlsx", "data"),
+    Input("btn_xlsx", "n_clicks"),
+    prevent_initial_call=True,
+)
+def func(n_clicks):
+    return dcc.send_data_frame(downloadable[0].to_json(), "transcript{}.json".format(n_clicks))

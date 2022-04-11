@@ -101,5 +101,5 @@ if __name__ == "__main__":
     }
     pipeline.instantiate(initial_params)
 
-    audioname = "../0hello_test.wav"
-    combineFeatures(audioname, './test.json', MODEL, PROCESSOR, pipeline)
+    audioname = "../assets/AbbottCostelloWhosonFirst.wav"
+    combineFeatures(audioname, './whosonfirst.json', MODEL, PROCESSOR, pipeline)
