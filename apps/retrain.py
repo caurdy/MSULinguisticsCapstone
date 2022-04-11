@@ -1,20 +1,33 @@
 # Add Model Retraining Page Here
 # GET BUTTONS
 import base64
+import threading
+from queue import Queue
 
+from Tools.scripts.ndiff import fopen
 from dash.dependencies import Output, Input, State
 from dash import dcc, html, callback_context
+import dash_bootstrap_components as dbc
 import os
 import json
 import dash_uploader as du
 from dash.exceptions import PreventUpdate
 
+from DataScience.SpeechToTextHF import Wav2Vec2ASR
 from assets.TestPipline import SpeakerDiaImplement
 from assets.database_loader import CreateDatabase
+from DataScience.DashProgress import DashProgress
 from PyannoteProj.data_preparation.saved_model import model_0, model_1
 
 from starter import app
 
+
+progress_queue = Queue(1)
+progress_memory = 0
+base_model_string=""
+data_file=""
+output_dir=""
+num_epochs=3
 
 # du.configure_upload(app, )
 def get_upload(uid):
@@ -49,6 +62,8 @@ layout = html.Div([
                                                                   'width': '30px', 'height': '20%',
                                                                   }),
                 id='hints', n_clicks=0),
+
+    html.Div(id='hintOutput', children=[]),
 
     html.Hr(),
 
@@ -98,6 +113,9 @@ def update_output(value):
                                  multiple=True,
                                  # style={'margin-left': '300px'}
                              ),
+                             dcc.Interval(id='clock', interval=1000, n_intervals=0, max_intervals=-1),
+                             dbc.Progress(value=0, id="progress_bar"),
+                             html.Button("Train", id='start_work', n_clicks=0),
                              html.Div(id='speech-output', children=[]),
                              ])
         else:
@@ -181,17 +199,69 @@ def selectModel(value, contents, clicks, filename):
             # dropdown_options.append(f'MyModel{clicks}')
             # Add Model to directory
 
-            CreateDatabase("Talkbank")  # This is training data
+            # CreateDatabase("Talkbank")  # This is training data
             dia_pipeline = SpeakerDiaImplement()
             dia_pipeline.AddPipeline(model_name=f"assets/saved_model/{value}/seg_model.ckpt",
                                      parameter_name=f"assets/saved_model/{value}/hyper_parameter.json")
-            dia_pipeline.TrainData('assets/Talkbank')
+            old, new, new_model_name = dia_pipeline.TrainData('SampleData')
+
             # os.mkdir(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}')
             # open(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}/{filename}', 'w')
-            return html.Div(html.H5(f'Speech Model set to MyModel{clicks}'))
+            return html.Div(
+                html.H5(
+                    f'The Diarization Error Rate was {old} and it is {new} right now. Model Saved as "{new_model_name}"!'))
         except Exception as e:
             print(e)
             return html.Div([
                 'There was an error processing this folder.'])
+    else:
+        return []
+
+
+@app.callback(
+    [Output("progress_bar", "value")],
+    [Input("clock", "n_intervals")])
+def progress_bar_update(n):
+    global progress_memory
+    if not progress_queue.empty():
+        progress_bar_val = progress_queue.get()
+        progress_memory = progress_bar_val
+    else:
+        progress_bar_val = progress_memory
+    return (progress_bar_val,)
+
+
+@app.callback([
+    Output("start_work", "n_clicks")],
+    [Input("start_work", "n_clicks")])
+def start_bar(n):
+    if n == 0:
+        return (0,)
+    threading.Thread(target=start_work,
+                     args=(progress_queue, base_model_string, data_file, output_dir, num_epochs)).start()
+    return (0,)
+
+
+def start_work(output_queue, base_model, data_file, output_dir, num_epochs):
+    progress_bar = DashProgress()
+    model = Wav2Vec2ASR()
+    model.loadModel(base_model)
+    model.train(data_file, output_dir, num_epochs, progress_bar)
+    while (progress_bar.done == False):
+        if output_queue.empty():
+            value = int(progress_bar.current_step / num_epochs * 100)
+            output_queue.put(progress_bar.current_step)
+
+    return (None)
+
+@app.callback(Output('hintOutput', 'children'),
+              Input('hitns', 'n_clicks'))
+def display_help(clicks):
+    if clicks % 2 == 1:
+        page = []
+        with open('assets/Information buttons.docx') as fp:
+            lines = fp.readlines()
+            page.append(html.Div(lines))
+        return html.Div(page)
     else:
         return []
