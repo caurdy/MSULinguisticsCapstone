@@ -94,7 +94,7 @@ class Wav2Vec2ASR:
         if self.model is None or self.processor is None:
             raise Exception("Ensure both the Model and Processor are set")
 
-        df = pd.read_json(datafile)
+        df = pd.read_json(datafile, "columns")
         df = df.apply(self.prepare_dataset, axis=1)
         dataset = Dataset.from_pandas(df.loc[:5])  # Can't train on entire dataframe, not enough RAM
 
@@ -122,7 +122,6 @@ class Wav2Vec2ASR:
 
         if callback is None:
 
-
             trainer = Trainer(
                 model=self.model,
                 data_collator=data_collator,
@@ -144,8 +143,6 @@ class Wav2Vec2ASR:
                 callbacks=[callback],
             )
 
-
-
         trainer.train()
 
     def predict(self, audioPath=None, audioArray=None):
@@ -166,6 +163,8 @@ class Wav2Vec2ASR:
         with torch.no_grad():
             if self.usingLM:
                 input_values = self.processor(audioArray, sampling_rate=16000, return_tensors="pt")
+                if torch.cuda.is_available():
+                    input_values = input_values.to("cuda")
                 logits = self.model(**input_values).logits[0].cpu().numpy()
                 transcription = self.processor.decode(logits).text
                 probs = np.softmax(logits)
@@ -174,6 +173,8 @@ class Wav2Vec2ASR:
             else:
                 input_values = self.processor(torch.tensor(audioArray), sampling_rate=16000, return_tensors="pt",
                                               padding=True).input_values
+                if torch.cuda.is_available():
+                    input_values = input_values.to("cuda")
                 logits = self.model(input_values).logits
                 probs = self.SOFTMAX_TORCH(logits)
                 max_probs = torch.max(probs, dim=-1)[0]
@@ -249,7 +250,10 @@ class Wav2Vec2ASR:
         self.processor.save_pretrained(location)
 
     def loadModel(self, location):
-        self.model = Wav2Vec2ForCTC.from_pretrained(location)
+        if torch.cuda.is_available():
+            self.model = Wav2Vec2ForCTC.from_pretrained(location).to("cuda")
+        else:
+            self.model = Wav2Vec2ForCTC.from_pretrained(location)
         if 'lm' in location:
             self.processor = Wav2Vec2ProcessorWithLM.from_pretrained(location)
             self.usingLM = True
@@ -260,13 +264,14 @@ class Wav2Vec2ASR:
 
 if __name__ == "__main__":
     # example use case
-    #model = "patrickvonplaten/wav2vec2-base-100h-with-lm"
-    model = "facebook/wav2vec2-large-960h-lv60-self"
+    # model = "patrickvonplaten/wav2vec2-base-100h-with-lm"
+    # model = "facebook/wav2vec2-large-960h-lv60-self"
+    model = "patrickvonplaten/wav2vec2_tiny_random"
     asr_model = Wav2Vec2ASR()
     asr_model.loadModel(model)
     basePath = os.path.dirname(os.path.abspath(__file__))
 
-    asr_model.train('../Data/corrected.json', '../Data/')
+    # sr_model.train('../Data/corrected.json', '../Data/')
     filename = "../assets/0hello_test.wav"
     transcript, _ = asr_model.predict(filename)
     asr_model.saveModel("Data/Models/HFTest/")
