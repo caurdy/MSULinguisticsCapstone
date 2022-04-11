@@ -42,22 +42,18 @@ class SpeakerDiaImplement:
         pipeline.instantiate(self.pipline_parameter)
         return pipeline
 
-    def SaveModel(self, trainer):
-        now = datetime.now()
-        time_now = str(now.strftime("%m_%d_%Y_%H_%M_%S"))
+    def SaveModel(self, trainer, time_now):
         os.mkdir('saved_model/model_{}'.format(time_now))
         trainer.save_checkpoint("saved_model/model_{}/seg_model.ckpt".format(time_now))
 
-        folder = './data_preparation/saved_model'
+        folder = 'saved_model'
         folder = Path(folder).absolute()
         sub_folders = [name for name in os.listdir(folder) if os.path.isdir(os.path.join(folder, name))]
         sub_folders.append("model_{}".format(str(time_now)))
         with open("saved_model/sample.json", "w") as outfile:
             json.dump(sub_folders, outfile)
 
-    def SavePipelineParameter(self):
-        now = datetime.now()
-        time_now = str(now.strftime("%m_%d_%Y_%H_%M_%S"))
+    def SavePipelineParameter(self, time_now):
         with open("saved_model/model_{}/hyper_parameter.json".format(time_now), "w") as outfile:
             json.dump(self.pipline_parameter, outfile)
 
@@ -76,34 +72,35 @@ class SpeakerDiaImplement:
         print(trainer)
         print("The previous segmentation error rate is '{}', and the new one is '{}'".format(der_pretrained * 100,
                                                                                              der_finetuned * 100))
-
+        now = datetime.now()
+        time_now = str(now.strftime("%m_%d_%Y_%H_%M_%S"))
         if der_finetuned * 100 < der_pretrained * 100:
-            opt = input("the model performance is greater than before. Do your Want to optimize parameter? (If No it will use default hparams): [y]/n")
-            if opt == 'y':
-                self.model = trained_model
-                new_paramter = Optimizing(self.model, dataset_name, num_opti_iteration=20, embedding_batch_size=8)
-                self.pipline_parameter = new_paramter
-                self.SaveModel(trainer)
-                self.SavePipelineParameter()
-            else:
-                self.model = trained_model
-                self.SaveModel(trainer)
-                self.SavePipelineParameter()
+            # opt = input("the model performance is greater than before. Do your Want to optimize parameter? (If No it will use default hparams): [y]/n")
+            # if opt == 'y':
+            #     self.model = trained_model
+            #     new_paramter = Optimizing(self.model, dataset_name, num_opti_iteration=20, embedding_batch_size=8)
+            #     self.pipline_parameter = new_paramter
+            #     self.SaveModel(trainer)
+            #     self.SavePipelineParameter()
+            # else:
+            self.model = trained_model
+            self.SaveModel(trainer, time_now)
+            self.SavePipelineParameter(time_now)
         else:
             checked_saved = input("Not too much performance, Do you still want to save that?: [y]/n")
             if checked_saved == 'y':
-                opt = input("Do your Want to optimize parameter? (If No it will use default hparams): [y]/n")
-                if opt == 'y':
-                    self.model = trained_model
-                    new_paramter = Optimizing(self.model, dataset_name, num_opti_iteration=20, embedding_batch_size=8)
-                    self.pipline_parameter = new_paramter
-                    self.SaveModel(trainer)
-                    self.SavePipelineParameter()
-                else:
-                    self.model = trained_model
-                    print(type(self.model))
-                    self.SaveModel(trainer)
-                    self.SavePipelineParameter()
+                # opt = input("Do your Want to optimize parameter? (If No it will use default hparams): [y]/n")
+                # if opt == 'y':
+                #     self.model = trained_model
+                #     new_paramter = Optimizing(self.model, dataset_name, num_opti_iteration=20, embedding_batch_size=8)
+                #     self.pipline_parameter = new_paramter
+                #     self.SaveModel(trainer)
+                #     self.SavePipelineParameter()
+                # else:
+                self.model = trained_model
+                print(type(self.model))
+                self.SaveModel(trainer, time_now)
+                self.SavePipelineParameter(time_now)
             else:
                 print('Drop out!')
 
@@ -126,7 +123,7 @@ if __name__ == '__main__':
 
     if train == 'y':
         # data_name = input('Given the data you want to retrain:')
-        dia_pipeline.TrainData('Talkbank', epoch_num=5)
+        dia_pipeline.TrainData('SampleData', epoch_num=5)
     else:
         dia_pipeline.Diarization('Atest.wav')
 

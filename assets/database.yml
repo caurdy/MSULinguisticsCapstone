@@ -1,0 +1,50 @@
+Databases:
+  AMI: TrainingData/AMI_set/WAV_set/ami/database/amicorpus/{uri}/audio/{uri}.Mix-Headset.wav
+  SampleData: TrainingData/SampleData/WAV_set/{uri}.wav
+  Talkbank: TrainingData/Talkbank/WAV_set/{uri}.wav
+Protocols:
+  AMI:
+    SpeakerDiarization:
+      only_words:
+        development:
+          annotated: TrainingData/AMI_set/UEM_set/uems/dev/{uri}.uem
+          annotation: TrainingData/AMI_set/RTTM_set/only_words/rttms/dev/{uri}.rttm
+          uri: TrainingData/AMI_set/LIST_set/lists/dev.meetings.txt
+        test:
+          annotated: TrainingData/AMI_set/UEM_set/uems/test/{uri}.uem
+          annotation: TrainingData/AMI_set/RTTM_set/only_words/rttms/test/{uri}.rttm
+          uri: TrainingData/AMI_set/LIST_set/lists/test.meetings.txt
+        train:
+          annotated: TrainingData/AMI_set/UEM_set/uems/train/{uri}.uem
+          annotation: TrainingData/AMI_set/RTTM_set/only_words/rttms/train/{uri}.rttm
+          uri: TrainingData/AMI_set/LIST_set/lists/train.meetings.txt
+  SampleData:
+    SpeakerDiarization:
+      only_words:
+        development:
+          annotated: TrainingData/SampleData/UEM_set/{uri}.uem
+          annotation: TrainingData/SampleData/RTTM_set/{uri}.rttm
+          uri: TrainingData/SampleData/LIST_set/dev.txt
+        test:
+          annotated: TrainingData/SampleData/UEM_set/{uri}.uem
+          annotation: TrainingData/SampleData/RTTM_set/{uri}.rttm
+          uri: TrainingData/SampleData/LIST_set/test.txt
+        train:
+          annotated: TrainingData/SampleData/UEM_set/{uri}.uem
+          annotation: TrainingData/SampleData/RTTM_set/{uri}.rttm
+          uri: TrainingData/SampleData/LIST_set/train.txt
+  Talkbank:
+    SpeakerDiarization:
+      only_words:
+        development:
+          annotated: TrainingData/Talkbank/UEM_set/{uri}.uem
+          annotation: TrainingData/Talkbank/RTTM_set/{uri}.rttm
+          uri: TrainingData/Talkbank/LIST_set/dev.txt
+        test:
+          annotated: TrainingData/Talkbank/UEM_set/{uri}.uem
+          annotation: TrainingData/Talkbank/RTTM_set/{uri}.rttm
+          uri: TrainingData/Talkbank/LIST_set/test.txt
+        train:
+          annotated: TrainingData/Talkbank/UEM_set/{uri}.uem
+          annotation: TrainingData/Talkbank/RTTM_set/{uri}.rttm
+          uri: TrainingData/Talkbank/LIST_set/train.txt
