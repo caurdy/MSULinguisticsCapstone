@@ -13,11 +13,11 @@ class SpeakerDiaImplement:
         print(type(self.model))
         self.embedding = 'speechbrain/spkrec-ecapa-voxceleb'
         self.pipline_parameter = {
-                                  "onset": 0.810, "offset": 0.481, "min_duration_on": 0.055,
-                                  "min_duration_off": 0.098,
-                                  "min_activity": 6.073, "stitch_threshold": 0.040,
-                                  "clustering": {"method": "average", "threshold": 0.595},
-                                 }
+            "onset": 0.810, "offset": 0.481, "min_duration_on": 0.055,
+            "min_duration_off": 0.098,
+            "min_activity": 6.073, "stitch_threshold": 0.040,
+            "clustering": {"method": "average", "threshold": 0.595},
+        }
 
     def AddPipeline(self, model_name: str, parameter_name: str):
         sad_scores = Model.from_pretrained(model_name)
@@ -79,7 +79,8 @@ class SpeakerDiaImplement:
                                                                                              der_finetuned * 100))
 
         if der_finetuned * 100 < der_pretrained * 100:
-            opt = input("the model performance is greater than before. Do your Want to optimize parameter? (If No it will use default hparams): [y]/n")
+            opt = input(
+                "the model performance is greater than before. Do your Want to optimize parameter? (If No it will use default hparams): [y]/n")
             if opt == 'y':
                 self.model = trained_model
                 new_paramter = Optimizing(self.model, dataset_name, num_opti_iteration=20, embedding_batch_size=8)
@@ -108,6 +109,7 @@ class SpeakerDiaImplement:
             else:
                 print('Drop out!')
 
+
 # if __name__ == '__main__':
 #     CreateDatabase('SampleData', split=0.2, validation=True)
 
@@ -124,11 +126,8 @@ if __name__ == '__main__':
     dia_pipeline.AddPipeline(model_name="data_preparation/saved_model/{}/seg_model.ckpt".format(model_name),
                              parameter_name="data_preparation/saved_model/{}/hyper_parameter.json".format(model_name))
 
-
     if train == 'y':
         data_name = input('Given the data you want to retrain:')
         dia_pipeline.TrainData(data_name, epoch_num=5)
     else:
         dia_pipeline.Diarization('Atest.wav')
-
-
