@@ -10,7 +10,7 @@ from pyctcdecode import build_ctcdecoder
 from typing import Dict, List, Optional, Union
 from dataclasses import dataclass
 import os
-
+os.environ["WANDB_DISABLED"] = "true"
 
 @dataclass
 class DataCollatorCTCWithPadding:
@@ -89,7 +89,7 @@ class Wav2Vec2ASR:
         self.wer_metric = load_metric("wer")
         self.usingLM = None
 
-    def train(self, datafile, outputDir, callback=None, num_epochs=30):
+    def train(self, datafile, outputDir, num_epochs=30):
 
         if self.model is None or self.processor is None:
             raise Exception("Ensure both the Model and Processor are set")
@@ -119,42 +119,29 @@ class Wav2Vec2ASR:
             push_to_hub=False,
             no_cuda=True
         )
-
-        if callback is None:
-
-
-            trainer = Trainer(
-                model=self.model,
-                data_collator=data_collator,
-                args=training_args,
-                compute_metrics=self.compute_metrics,
-                train_dataset=dataset,
-                eval_dataset=dataset,
-                tokenizer=self.processor.feature_extractor,
+        trainer = Trainer(
+            model=self.model,
+            data_collator=data_collator,
+            compute_metrics=self.compute_metrics,
+            args=training_args,
+            eval_dataset=dataset,
+            train_dataset=dataset,
+            tokenizer=self.processor.feature_extractor,
             )
-        else:
-            trainer = Trainer(
-                model=self.model,
-                data_collator=data_collator,
-                args=training_args,
-                compute_metrics=self.compute_metrics,
-                train_dataset=dataset,
-                eval_dataset=dataset,
-                tokenizer=self.processor.feature_extractor,
-                callbacks=[callback],
-            )
-
 
 
         trainer.train()
 
+
     def predict(self, audioPath=None, audioArray=None):
+
+
         """
-        Take in either the .wav file path or floating point array for prediction
-        :param audioArray: floating point array
-        :param audioPath: file path to .wav file
-        :return: transcription str and confidence float
-        """
+                Take in either the .wav file path or floating point array for prediction
+                :param audioArray: floating point array
+                :param audioPath: file path to .wav file
+                :return: transcription str and confidence float
+                """
         if self.model is None or self.processor is None:
             raise Exception("Ensure both the Model and Processor are set")
         if audioPath is None and audioArray is None:
@@ -168,18 +155,18 @@ class Wav2Vec2ASR:
                 input_values = self.processor(audioArray, sampling_rate=16000, return_tensors="pt")
                 logits = self.model(**input_values).logits[0].cpu().numpy()
                 transcription = self.processor.decode(logits).text
-                probs = np.softmax(logits)
-                max_probs = np.amax(probs, axis=1)
-                confidence = np.sum(max_probs) / len(max_probs)
+
             else:
                 input_values = self.processor(torch.tensor(audioArray), sampling_rate=16000, return_tensors="pt",
                                               padding=True).input_values
                 logits = self.model(input_values).logits
-                probs = self.SOFTMAX_TORCH(logits)
-                max_probs = torch.max(probs, dim=-1)[0]
-                confidence = (torch.sum(max_probs) / len(max_probs[0])).detach().numpy()
                 predicted_ids = torch.argmax(logits, dim=-1)
                 transcription = self.processor.batch_decode(predicted_ids)[0]
+
+            logits = self.model(**input_values).logits
+            probs = self.SOFTMAX_TORCH(logits)
+            max_probs = torch.max(probs, dim=-1)[0]
+            confidence = (torch.sum(max_probs) / len(max_probs[0])).detach().numpy()
 
         return transcription, confidence
 
@@ -260,15 +247,15 @@ class Wav2Vec2ASR:
 
 if __name__ == "__main__":
     # example use case
-    #model = "patrickvonplaten/wav2vec2-base-100h-with-lm"
-    model = "facebook/wav2vec2-large-960h-lv60-self"
+    model = "patrickvonplaten/wav2vec2-base-100h-with-lm"
+    #model = "facebook/wav2vec2-large-960h-lv60-self"
     asr_model = Wav2Vec2ASR()
     asr_model.loadModel(model)
-    basePath = os.path.dirname(os.path.abspath(__file__))
 
-    asr_model.train('../Data/corrected.json', '../Data/')
+    asr_model.train('../Data/correctedShort.json', '../Data/', 3)
     filename = "../assets/0hello_test.wav"
     transcript, _ = asr_model.predict(filename)
+    basePath = os.path.dirname(os.path.abspath(__file__))
     asr_model.saveModel("Data/Models/HFTest/")
     with open("hftest.txt", 'w') as output:
         output.write(transcript)
