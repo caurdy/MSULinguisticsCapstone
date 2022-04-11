@@ -6,7 +6,7 @@ import yaml
 
 
 def CreateDatabase(file_name: str, split=0.2, validation = True):
-    dataset_path = 'TrainingData' + '/' + file_name
+    dataset_path = 'assets/TrainingData' + '/' + file_name
     if not os.path.exists(dataset_path):
         raise KeyError('Cannot find indicated file directory')
 
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     CreateDatabase('Talkbank', split=0.2, validation=True)
     data_names_lst = list(os.listdir('TrainingData/Talkbank'))
     print(data_names_lst)
-    with open('assets/database.yml') as file:
+    with open('../database.yml') as file:
         data = yaml.load(file, Loader=yaml.FullLoader)
         print(data)
     # DataLoader('Talkbank')

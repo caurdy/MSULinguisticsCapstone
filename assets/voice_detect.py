@@ -40,7 +40,7 @@ def evaluation(model, protocol, subset="test"):
 
 
 def Train(model, data_name, num_epoch=2):
-    folder = 'saved_model'
+    folder = 'assets/saved_model'
     folder = Path(folder).absolute()
     sub_folders = [name for name in os.listdir(folder) if os.path.isdir(os.path.join(folder, name))]
     print("the current model", sub_folders)

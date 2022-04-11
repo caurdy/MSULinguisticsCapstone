@@ -2,6 +2,7 @@
 # GET BUTTONS
 import base64
 import threading
+import time
 from queue import Queue
 
 from Tools.scripts.ndiff import fopen
@@ -24,9 +25,9 @@ from starter import app
 
 progress_queue = Queue(1)
 progress_memory = 0
-base_model_string=""
-data_file=""
-output_dir=""
+base_model_string="patrickvonplaten/wav2vec2-base-100h-with-lm"
+data_file="../Data/correctedShort.json"
+output_dir="/assets/asr_models/"
 num_epochs=3
 
 # du.configure_upload(app, )
@@ -113,8 +114,8 @@ def update_output(value):
                                  multiple=True,
                                  # style={'margin-left': '300px'}
                              ),
-                             dcc.Interval(id='clock', interval=1000, n_intervals=0, max_intervals=-1),
-                             dbc.Progress(value=0, id="progress_bar"),
+                             # dcc.Interval(id='clock', interval=1000, n_intervals=0, max_intervals=-1),
+                             # dbc.Progress(value=0, id="progress_bar"),
                              html.Button("Train", id='start_work', n_clicks=0),
                              html.Div(id='speech-output', children=[]),
                              ])
@@ -167,9 +168,9 @@ def selectModel(value, contents, clicks, filename, dropdown_options):
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
     if contents is not None and value is not None:
         try:
-
+            return [], dropdown_options
                 # dropdown_options.append(f'MyModel{clicks}')
-                return html.Div(html.H5(f'Speech Model set to MyModel{clicks}')), dropdown_options
+                # return html.Div(html.H5(f'Speech Model set to MyModel{clicks}')), dropdown_options
             # Run it through the model
             # save the model
         except Exception as e:
@@ -218,39 +219,33 @@ def selectModel(value, contents, clicks, filename):
         return []
 
 
-@app.callback(
-    [Output("progress_bar", "value")],
-    [Input("clock", "n_intervals")])
-def progress_bar_update(n):
-    global progress_memory
-    if not progress_queue.empty():
-        progress_bar_val = progress_queue.get()
-        progress_memory = progress_bar_val
-    else:
-        progress_bar_val = progress_memory
-    return (progress_bar_val,)
+# @app.callback(
+#     [Output("progress_bar", "value")],
+#     [Input("clock", "n_intervals")])
+# def progress_bar_update(n):
+#     global progress_memory
+#     if not progress_queue.empty():
+#         progress_bar_val = progress_queue.get()
+#         progress_memory = progress_bar_val
+#     else:
+#         progress_bar_val = progress_memory
+#     return (progress_bar_val,)
+#
+#
+# @app.callback([
+#     Output("start_work", "n_clicks")],
+#     [Input("start_work", "n_clicks")])
+# def start_bar(n):
+#     if n == 0:
+#         return (0,)
+#     threading.Thread(target=start_work,
+#                      args=(progress_queue, base_model_string, data_file, output_dir, num_epochs)).start()
+#     return (0,)
 
-
-@app.callback([
-    Output("start_work", "n_clicks")],
-    [Input("start_work", "n_clicks")])
-def start_bar(n):
-    if n == 0:
-        return (0,)
-    threading.Thread(target=start_work,
-                     args=(progress_queue, base_model_string, data_file, output_dir, num_epochs)).start()
-    return (0,)
-
-
-def start_work(output_queue, base_model, data_file, output_dir, num_epochs):
-    progress_bar = DashProgress()
-    model = Wav2Vec2ASR()
-    model.loadModel(base_model)
-    model.train(data_file, output_dir, num_epochs, progress_bar)
-    while (progress_bar.done == False):
-        if output_queue.empty():
-            value = int(progress_bar.current_step / num_epochs * 100)
-            output_queue.put(progress_bar.current_step)
+@app.callback(Output('speech-output', 'children'),
+              Input('start_work', 'n_clicks'))
+def start_work(licks):
+    time.sleep(60)
 
     return (None)
 
@@ -258,10 +253,6 @@ def start_work(output_queue, base_model, data_file, output_dir, num_epochs):
               Input('hitns', 'n_clicks'))
 def display_help(clicks):
     if clicks % 2 == 1:
-        page = []
-        with open('assets/Information buttons.docx') as fp:
-            lines = fp.readlines()
-            page.append(html.Div(lines))
-        return html.Div(page)
+        return html.Div(html.Link(href='Informations buttons.docx'))
     else:
         return []
