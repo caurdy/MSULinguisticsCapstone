@@ -91,7 +91,7 @@ if __name__ == '__main__':
     CreateDatabase('Talkbank', split=0.2, validation=True)
     data_names_lst = list(os.listdir('TrainingData/Talkbank'))
     print(data_names_lst)
-    with open('../database.yml') as file:
+    with open('assets/database.yml') as file:
         data = yaml.load(file, Loader=yaml.FullLoader)
         print(data)
     # DataLoader('Talkbank')
