@@ -6,10 +6,10 @@ COPY requirements.txt .
 COPY . /usr/src/app
 
 ENV PYTHONPATH /usr/src/app
-RUN apt-get update -y && apt-get install -y --no-install-recommends build-essential gcc libsndfile1
+RUN apt-get update -y && apt-get install git -y --no-install-recommends build-essential gcc libsndfile1
 
 RUN pip install -r requirements.txt
-RUN pip install https://github.com/kpu/kenlm/archive/master.zip
+#RUN pip install https://github.com/kpu/kenlm/archive/master.zip
 ENTRYPOINT ["python", "-u", "./execute.py"]
 
 # docker build -t [Name of the image] .

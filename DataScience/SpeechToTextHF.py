@@ -9,6 +9,7 @@ import numpy as np
 from pyctcdecode import build_ctcdecoder
 from typing import Dict, List, Optional, Union
 from dataclasses import dataclass
+import os
 
 
 @dataclass
@@ -88,7 +89,7 @@ class Wav2Vec2ASR:
         self.wer_metric = load_metric("wer")
         self.usingLM = None
 
-    def train(self, datafile, outputDir, num_epochs=30):
+    def train(self, datafile, outputDir, callback=None, num_epochs=30):
 
         if self.model is None or self.processor is None:
             raise Exception("Ensure both the Model and Processor are set")
@@ -119,15 +120,31 @@ class Wav2Vec2ASR:
             no_cuda=True
         )
 
-        trainer = Trainer(
-            model=self.model,
-            data_collator=data_collator,
-            args=training_args,
-            compute_metrics=self.compute_metrics,
-            train_dataset=dataset,
-            eval_dataset=dataset,
-            tokenizer=self.processor.feature_extractor,
-        )
+        if callback is None:
+
+
+            trainer = Trainer(
+                model=self.model,
+                data_collator=data_collator,
+                args=training_args,
+                compute_metrics=self.compute_metrics,
+                train_dataset=dataset,
+                eval_dataset=dataset,
+                tokenizer=self.processor.feature_extractor,
+            )
+        else:
+            trainer = Trainer(
+                model=self.model,
+                data_collator=data_collator,
+                args=training_args,
+                compute_metrics=self.compute_metrics,
+                train_dataset=dataset,
+                eval_dataset=dataset,
+                tokenizer=self.processor.feature_extractor,
+                callbacks=[callback],
+            )
+
+
 
         trainer.train()
 
@@ -247,7 +264,9 @@ if __name__ == "__main__":
     model = "facebook/wav2vec2-large-960h-lv60-self"
     asr_model = Wav2Vec2ASR()
     asr_model.loadModel(model)
-    # asr_model.train('../Data/corrected_lessthan2_5KB.json', '../Data/')
+    basePath = os.path.dirname(os.path.abspath(__file__))
+
+    asr_model.train('../Data/corrected.json', '../Data/')
     filename = "../assets/0hello_test.wav"
     transcript, _ = asr_model.predict(filename)
     asr_model.saveModel("Data/Models/HFTest/")

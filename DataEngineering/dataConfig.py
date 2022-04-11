@@ -36,6 +36,7 @@ def convertToDataframe(transcript_dir: str = '../Data/Transcripts/', audio_dir: 
     """
     df = pd.DataFrame(columns=['file', 'text', 'audio', 'sampling_rate'])
 
+    i = 0
     # Read transcripts into dataframe
     for filename in os.listdir(transcript_dir):
         if 'corrected' not in filename:
@@ -61,6 +62,9 @@ def convertToDataframe(transcript_dir: str = '../Data/Transcripts/', audio_dir: 
         data['sampling_rate'] = sampling_rate
 
         df.loc[len(df.index)] = data
+        i += 1
+        if i == 3:
+            break
 
     return df
 
