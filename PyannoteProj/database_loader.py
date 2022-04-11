@@ -16,7 +16,7 @@ def CreateDatabase(file_name: str, split=0.2, validation = True):
             "UEM_set" not in data_names_lst:
         raise KeyError('Cannot find indicated file directory')
 
-    os.makedirs(dataset_path + '/LIST_set')
+    # os.makedirs(dataset_path + '/LIST_set')
 
     """
         Creating the txt file list

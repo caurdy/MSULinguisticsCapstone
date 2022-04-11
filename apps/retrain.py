@@ -9,8 +9,8 @@ import json
 import dash_uploader as du
 from dash.exceptions import PreventUpdate
 
-from PyannoteProj.TestPipline import SpeakerDiaImplement
-from PyannoteProj.database_loader import CreateDatabase
+from assets.TestPipline import SpeakerDiaImplement
+from assets.database_loader import CreateDatabase
 from PyannoteProj.data_preparation.saved_model import model_0, model_1
 
 from starter import app
