@@ -108,7 +108,6 @@ class SpeakerDiaImplement:
             else:
                 print('Drop out!')
 
-
 # if __name__ == '__main__':
 #     CreateDatabase('SampleData', split=0.2, validation=True)
 
@@ -124,6 +123,7 @@ if __name__ == '__main__':
     dia_pipeline = SpeakerDiaImplement()
     dia_pipeline.AddPipeline(model_name="data_preparation/saved_model/{}/seg_model.ckpt".format(model_name),
                              parameter_name="data_preparation/saved_model/{}/hyper_parameter.json".format(model_name))
+
 
     if train == 'y':
         data_name = input('Given the data you want to retrain:')
