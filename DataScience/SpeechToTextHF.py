@@ -11,10 +11,6 @@ from typing import Dict, List, Optional, Union
 from dataclasses import dataclass
 
 
-def softmax(logits):
-    e = np.exp(logits - np.max(logits))
-    return e / e.sum(axis=-1).reshape([logits.shape[0], 1])
-
 @dataclass
 class DataCollatorCTCWithPadding:
     """
@@ -78,13 +74,19 @@ class DataCollatorCTCWithPadding:
         return batch
 
 
+def softmax(logits):
+    e = np.exp(logits - np.max(logits))
+    return e / e.sum(axis=-1).reshape([logits.shape[0], 1])
+
+
 class Wav2Vec2ASR:
+    SOFTMAX_TORCH = softmax_torch = torch.nn.Softmax(dim=-1)
 
     def __init__(self):
         self.processor = None
         self.model = None
         self.wer_metric = load_metric("wer")
-        self.softmax_torch = torch.nn.Softmax(dim=-1)
+        self.usingLM = None
 
     def train(self, datafile, outputDir):
 
@@ -129,38 +131,38 @@ class Wav2Vec2ASR:
 
         trainer.train()
 
-    def predict(self, audio):
-
+    def predict(self, audioPath=None, audioArray=None):
+        """
+        Take in either the .wav file path or floating point array for prediction
+        :param audioArray: floating point array
+        :param audioPath: file path to .wav file
+        :return: transcription str and confidence float
+        """
         if self.model is None or self.processor is None:
             raise Exception("Ensure both the Model and Processor are set")
-        input_audio, _ = librosa.load(audio, sr=16000)
+        if audioPath is None and audioArray is None:
+            raise Exception("I need a file or audio array to process")
 
-        input_values = self.processor(input_audio, sampling_rate=16000, return_tensors="pt", padding=True)
-
-        with torch.no_grad():
-            logits = self.model(**input_values).logits[0].cpu().numpy()
-            probs = softmax(logits)
-            max_probs = np.amax(probs, axis=1)
-            confidence = np.sum(max_probs) / len(max_probs)
-            print(confidence)
-            transcription = self.processor.decode(logits).text
-
-        return transcription, confidence
-
-    # only used in CombineFeature since it passes through the audio object
-    def predict_segment(self, audio):
-
-        if self.model is None or self.processor is None:
-            raise Exception("Ensure both the Model and Processor are set")
-
-        input_values = self.processor(audio, sampling_rate=16_000, return_tensors="pt")
+        if audioArray is None:
+            audioArray, _ = librosa.load(audioPath, sr=16000)
 
         with torch.no_grad():
-            logits = self.model(**input_values).logits[0].cpu().numpy()
-            probs = self.softmax_torch(logits)
-            max_probs = torch.max(probs, dim=-1)[0]
-            confidence = (torch.sum(max_probs) / len(max_probs[0])).detach().numpy()
-            transcription = self.processor.decode(logits).text
+            if self.usingLM:
+                input_values = self.processor(audioArray, sampling_rate=16000, return_tensors="pt")
+                logits = self.model(**input_values).logits[0].cpu().numpy()
+                transcription = self.processor.decode(logits).text
+                probs = np.softmax(logits)
+                max_probs = np.amax(probs, axis=1)
+                confidence = np.sum(max_probs) / len(max_probs)
+            else:
+                input_values = self.processor(torch.tensor(audioArray), sampling_rate=16000, return_tensors="pt",
+                                              padding=True).input_values
+                logits = self.model(input_values).logits
+                probs = self.SOFTMAX_TORCH(logits)
+                max_probs = torch.max(probs, dim=-1)[0]
+                confidence = (torch.sum(max_probs) / len(max_probs[0])).detach().numpy()
+                predicted_ids = torch.argmax(logits, dim=-1)
+                transcription = self.processor.batch_decode(predicted_ids)[0]
 
         return transcription, confidence
 
@@ -233,19 +235,21 @@ class Wav2Vec2ASR:
         self.model = Wav2Vec2ForCTC.from_pretrained(location)
         if 'lm' in location:
             self.processor = Wav2Vec2ProcessorWithLM.from_pretrained(location)
+            self.usingLM = True
         else:
             self.processor = Wav2Vec2Processor.from_pretrained(location)
+            self.usingLM = False
 
 
 if __name__ == "__main__":
     # example use case
-    model = "facebook/wav2vec2-base-100h"
     #model = "patrickvonplaten/wav2vec2-base-100h-with-lm"
+    model = "facebook/wav2vec2-large-960h-lv60-self"
     asr_model = Wav2Vec2ASR()
     asr_model.loadModel(model)
-    #asr_model.train('../Data/corrected_lessthan2_5KB.json', '../Data/')
-    filename = "../0hello_test.wav"
-    transcript = asr_model.predict(filename)
-    #asr_model.saveModel("Data/Models/HFTest/")
+    # asr_model.train('../Data/corrected_lessthan2_5KB.json', '../Data/')
+    filename = "../assets/0hello_test.wav"
+    transcript, _ = asr_model.predict(filename)
+    asr_model.saveModel("Data/Models/HFTest/")
     with open("hftest.txt", 'w') as output:
         output.write(transcript)

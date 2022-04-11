@@ -17,3 +17,4 @@ rpunct==1.0.2
 SoundFile==0.10.3.post1
 transformers==4.18.0
 pypi-kenlm
+speechbrain

@@ -1,41 +1,14 @@
 import base64
 import datetime
-import io
 from dash.dependencies import Input, Output, State
 from dash import dcc, html, dash_table, callback_context
-import pandas as pd
 from starter import app
-from Combine.CombineFeatures import combineFeatures
 import time
-from transformers import Wav2Vec2ForCTC, Wav2Vec2CTCTokenizer, Wav2Vec2FeatureExtractor, Wav2Vec2Processor
-from pyannote.audio import pipelines
-from pyannote.audio import Model
+from DataScience.TimeAlignment import ASRTimeAligner
 
 var = tuple()
 
-tokenizer = Wav2Vec2CTCTokenizer.from_pretrained("patrickvonplaten/wav2vec2_tiny_random") #facebook/wav2vec2-large-960h-lv60-self")
-model = Wav2Vec2ForCTC.from_pretrained("patrickvonplaten/wav2vec2_tiny_random") #"facebook/wav2vec2-large-960h-lv60-self")
-feature_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0,
-                                             do_normalize=True, return_attention_mask=False)
-processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
-
-# Speech Diarization Configuration
-sad_scores = Model.from_pretrained("pyannote/segmentation")
-emb_scores = Model.from_pretrained("pyannote/embedding")
-
-pipeline = pipelines.SpeakerDiarization(segmentation=sad_scores,
-                                        embedding=emb_scores,
-                                        embedding_batch_size=32)
-initial_params = {
-    "onset": 0.810,
-    "offset": 0.481,
-    "min_duration_on": 0.055,
-    "min_duration_off": 0.098,
-    "min_activity": 6.073,
-    "stitch_threshold": 0.040,
-    "clustering": {"method": "average", "threshold": 0.595},
-}
-pipeline.instantiate(initial_params)
+timeAligner = ASRTimeAligner(diarizationModelPath="PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52")
 
 layout = html.Div([
 
@@ -101,21 +74,9 @@ def parse_contents(contents, filename, date, cnt, store):
             fp.write(decoded)
 
         try:
-
-            if '.csv' in filename:
-                # Assume that the user uploaded a CSV file
-                df = pd.read_csv(
-                    io.StringIO(decoded.decode('utf-8')))
-            elif '.xls' in filename:
-                # Assume that the user uploaded an excel file
-                df = pd.read_excel(io.BytesIO(decoded))
-            elif '.wav' in filename:
+            if '.wav' in filename:
                 transcript_filepath = f'assets/' + filename.replace('.wav', '.json')
-                transcripts, diarization_time, transcript_time, avg_conf = combineFeatures(f'assets/{filename}',
-                                                                                           transcript_filepath,
-                                                                                           model=model,
-                                                                                           processor=processor,
-                                                                                           pipeline=pipeline)
+                transcripts, diarization_time, transcript_time, avg_conf = timeAligner.timeAlign(f'assets/{filename}', 'assets/')
                 # global var
                 archive = tuple((filename,
                                  transcript_filepath,
@@ -127,62 +88,41 @@ def parse_contents(contents, filename, date, cnt, store):
                                  len(store)))
                 store.append(archive)
 
+                return store, html.Div([
+                    html.H5(filename),
+                    html.Button(html.Audio(id="audio", src=f'assets/{filename}', controls=True, autoPlay=False)),
+                    html.Div('Transcription Time: ' + str(transcript_time) + " seconds"),
+                    html.Div("Diarization Time: " + str(diarization_time) + " seconds"),
+                    html.Div("Average ASR Confidence: " + str(round(avg_conf * 100, 2)) + '%'),
+                    html.Div(style={'padding': '2rem'}),
+                    dash_table.DataTable(
+                        transcripts,
+                        [{'name': i, 'id': i} for i in transcripts[0].keys()],
+                        css=[{
+                            'selector': '.dash-spreadsheet td div',
+                            'rule': '''
+                                        line-height: 15px;
+                                        max-height: 30px; min-height: 30px; height: 30px;
+                                        display: block;
+                                        overflow-y: hidden;
+                                    '''
+                        }],
+                        style_data={
+                            'whiteSpace': 'normal',
+                            'height': 'auto',
+                            'lineHeight': '15px'
+                        },
+                        style_cell={'textAlign': 'left'},
+                        style_table={'textAlign': 'center', 'width': '1050px'},
+                    ),
+
+                    html.Hr(),  # horizontal line
+                ],
+                    style={'margin-left': '300px'}
+                )
+
         except Exception as e:
             print(e)
             return store, html.Div([
                 'There was an error processing this file.'
             ])
-        if '.csv' in filename or '.xls' in filename:
-            return html.Div([
-                html.H5(filename),
-                html.H6(datetime.datetime.fromtimestamp(date)),
-
-                dash_table.DataTable(
-                    df.to_dict('records'),
-                    [{'name': i, 'id': i} for i in df.columns]
-                ),
-
-                html.Hr(),  # horizontal line
-
-                # For debugging, display the raw contents provided by the web browser
-                html.Div('Raw Content'),
-                html.Pre(contents[0:200] + '...', style={
-                    'whiteSpace': 'pre-wrap',
-                    'wordBreak': 'break-all'
-                })
-            ], id='transcript')
-        else:
-            return store, html.Div([
-                html.H5(filename),
-                html.Button(html.Audio(id="audio", src=f'assets/{filename}', controls=True, autoPlay=False)),
-                html.Div('Transcription Time: ' + str(transcript_time) + " seconds"),
-                html.Div("Diarization Time: " + str(diarization_time) + " seconds"),
-                html.Div("Average ASR Confidence: " + str(round(avg_conf*100, 2)) + '%'),
-                html.Div(style={'padding': '2rem'}),
-                dash_table.DataTable(
-                    #df.to_dict('records'),
-                    #[{'name': i, 'id': i} for i in df.columns],
-                    transcripts,
-                    [{'name': i, 'id': i} for i in transcripts[0].keys()],
-                    css=[{
-                        'selector': '.dash-spreadsheet td div',
-                        'rule': '''
-                        line-height: 15px;
-                        max-height: 30px; min-height: 30px; height: 30px;
-                        display: block;
-                        overflow-y: hidden;
-                    '''
-                    }],
-                    style_data={
-                        'whiteSpace': 'normal',
-                        'height': 'auto',
-                        'lineHeight': '15px'
-                    },
-                    style_cell={'textAlign': 'left'},
-                    style_table={'textAlign': 'center', 'width': '1050px'},
-                ),
-
-                html.Hr(),  # horizontal line
-            ],
-                style={'margin-left': '300px'}
-            )
