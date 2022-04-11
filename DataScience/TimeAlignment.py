@@ -124,12 +124,14 @@ class ASRTimeAligner:
             punc_time += time2 - time1
             ner_time += time3 - time2
 
+        with open('../assets/Abbott Costello Whos on First.json', "w") as jsonFile:
+            json.dump(transcript, jsonFile)
         self.transcripts[-1] = transcript
         return transcript, punc_time, ner_time
 
 
 if __name__ == '__main__':
-    file = '../assets/0hello_test.wav'
+    file = '../assets/Abbott Costello Whos on First.wav'
     timeAligner = ASRTimeAligner()
     timeAligner.timeAlign(file)
     timeAligner.getEntitiesLastTranscript()
