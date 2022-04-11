@@ -44,7 +44,10 @@ class ASRTimeAligner:
         if punctuationModel:
             self.punctuationModel = punctuationModel
         else:
-            self.punctuationModel = FastPunct()
+            if torch.cuda.is_available():
+                self.punctuationModel = None
+            else:
+                self.punctuationModel = FastPunct()
 
         if nerModel:
             self.nerModel = nerModel
