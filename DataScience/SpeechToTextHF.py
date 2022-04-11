@@ -167,7 +167,7 @@ class Wav2Vec2ASR:
 
             probs = self.SOFTMAX_TORCH(logits)
             max_probs = torch.max(probs, dim=-1)[0]
-            confidence = (torch.sum(max_probs) / len(max_probs[0])).detach().numpy()
+            confidence = (torch.sum(max_probs) / len(max_probs[0])).cpu().numpy()
 
         return transcription, confidence
 
