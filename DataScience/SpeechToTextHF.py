@@ -14,6 +14,13 @@ import os
 os.environ["WANDB_DISABLED"] = "true"
 
 
+def run_cuda_setup():
+    if torch.cuda.is_available():
+        torch.cuda.set_device('cuda:0')
+        print('Set device to', torch.cuda.current_device())
+        print('Current memory stats\n', torch.cuda.memory_summary(abbreviated=True))
+
+
 @dataclass
 class DataCollatorCTCWithPadding:
     """
@@ -85,11 +92,12 @@ def softmax(logits):
 class Wav2Vec2ASR:
     SOFTMAX_TORCH = softmax_torch = torch.nn.Softmax(dim=-1)
 
-    def __init__(self):
+    def __init__(self, use_cuda=True):
         self.processor = None
         self.model = None
         self.wer_metric = load_metric("wer")
         self.usingLM = None
+        self.use_cuda = use_cuda
 
     def train(self, datafile, outputDir, num_epochs=30):
 
@@ -147,27 +155,35 @@ class Wav2Vec2ASR:
 
         if audioArray is None:
             audioArray, _ = librosa.load(audioPath, sr=16000)
-
+        # print('Before Predict:\n', torch.cuda.memory_summary(abbreviated=True))
+        # print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
+        self.model.eval()
         with torch.no_grad():
             if self.usingLM:
                 input_values = self.processor(audioArray, sampling_rate=16000, return_tensors="pt")
-                #if torch.cuda.is_available():
-                #    input_values = input_values.to('cuda')
+                if torch.cuda.is_available() and self.use_cuda:
+                    input_values = input_values.to('cuda:0')
                 logits = self.model(**input_values).logits[0].cpu().numpy()
                 transcription = self.processor.decode(logits).text
 
             else:
                 input_values = self.processor(torch.tensor(audioArray), sampling_rate=16000, return_tensors="pt",
                                               padding=True).input_values
-                #if torch.cuda.is_available():
-                #    input_values = input_values.to('cuda')
+                if torch.cuda.is_available() and self.use_cuda:
+                    input_values = input_values.to('cuda:0')
+                # print('After moving input values\n', torch.cuda.memory_summary(abbreviated=True))
+                # print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
                 logits = self.model(input_values).logits
                 predicted_ids = torch.argmax(logits, dim=-1)
                 transcription = self.processor.batch_decode(predicted_ids)[0]
+                # print('After running model and decoding logits\n', torch.cuda.memory_summary(abbreviated=True))
+                # print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
 
             probs = self.SOFTMAX_TORCH(logits)
             max_probs = torch.max(probs, dim=-1)[0]
             confidence = (torch.sum(max_probs) / len(max_probs[0])).cpu().numpy()
+            # print('After confidence calculations\n', torch.cuda.memory_summary(abbreviated=True))
+            # print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
 
         return transcription, confidence
 
@@ -237,10 +253,14 @@ class Wav2Vec2ASR:
         self.processor.save_pretrained(location)
 
     def loadModel(self, location):
-        # torch.cuda.is_available():
-            #self.model = Wav2Vec2ForCTC.from_pretrained(location).to("cuda")
-        #else:
-        self.model = Wav2Vec2ForCTC.from_pretrained(location)
+        if torch.cuda.is_available() and self.use_cuda:
+            # print(torch.cuda.current_device())
+            # print('Before loading model\n', torch.cuda.memory_summary(abbreviated=True))
+            self.model = Wav2Vec2ForCTC.from_pretrained(location).to("cuda:0")
+            # print('After loading model\n', torch.cuda.memory_summary(abbreviated=True))
+        else:
+            self.model = Wav2Vec2ForCTC.from_pretrained(location)
+
         if 'lm' in location:
             self.processor = Wav2Vec2ProcessorWithLM.from_pretrained(location)
             self.usingLM = True
@@ -250,6 +270,7 @@ class Wav2Vec2ASR:
 
 
 if __name__ == "__main__":
+    run_cuda_setup()
     # example use case
     # model = "patrickvonplaten/wav2vec2-base-100h-with-lm"
     model = "facebook/wav2vec2-large-960h-lv60-self"
@@ -257,9 +278,9 @@ if __name__ == "__main__":
     asr_model.loadModel(model)
 
     # asr_model.train('../Data/correctedShort.json', '../Data/', 3)
-    filename = "../assets/0hello_test.wav"
+    filename = "../assets/AbbottCostelloWhosonFirst_30.wav"
     transcript, _ = asr_model.predict(filename)
     basePath = os.path.dirname(os.path.abspath(__file__))
-    asr_model.saveModel("Data/Models/HFTest/")
+    # asr_model.saveModel("Data/Models/HFTest/")
     with open("hftest.txt", 'w') as output:
         output.write(transcript)

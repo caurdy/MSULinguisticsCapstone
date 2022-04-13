@@ -19,3 +19,4 @@ pypi-kenlm
 speechbrain
 dash_uploader
 fastpunct~=2.0.2
+rpunct~=1.0.2

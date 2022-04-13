@@ -1,3 +1,4 @@
+import torch.cuda
 from pyannote.audio import Model
 
 from PyannoteProj.voice_detect import *
@@ -64,7 +65,7 @@ class SpeakerDiaImplement:
     def Diarization(self, audioPath):
         pipeline = self.GetPipline()
         diarization_result = pipeline(audioPath)
-
+        print('GPU available (in diarization):', torch.cuda.is_available())
         # write into the rttm file
         rttm_path = audioPath.replace('.wav', '.rttm')
         file = open(rttm_path, 'w')
