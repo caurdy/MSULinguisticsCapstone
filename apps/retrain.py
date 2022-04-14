@@ -22,6 +22,7 @@ from PyannoteProj.data_preparation.saved_model import model_0, model_1
 
 from starter import app
 
+du.configure_upload(app, 'assets/', use_upload_id=True)
 
 progress_queue = Queue(1)
 progress_memory = 0
@@ -29,6 +30,7 @@ base_model_string="patrickvonplaten/wav2vec2-base-100h-with-lm"
 data_file="../Data/correctedShort.json"
 output_dir="/assets/asr_models/"
 num_epochs=3
+diary_model = ""
 
 # du.configure_upload(app, )
 def get_upload(uid):
@@ -205,18 +207,28 @@ def selectModel(value, contents, clicks, filename):
             dia_pipeline.AddPipeline(model_name=f"assets/saved_model/{value}/seg_model.ckpt",
                                      parameter_name=f"assets/saved_model/{value}/hyper_parameter.json")
             old, new, new_model_name = dia_pipeline.TrainData('SampleData')
-
+            global diary_model
+            diary_model = new_model_name
             # os.mkdir(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}')
             # open(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}/{filename}', 'w')
             return html.Div(
                 html.H5(
-                    f'The Diarization Error Rate was {old} and it is {new} right now. Model Saved as "{new_model_name}"!'))
+                    f'The Diarization Error Rate was {old} and it is {new} right now. Model Saved as "{new_model_name}"!'),
+            html.Input("Name the new model", id='diary-input'),
+            html.Div(children=[], id='input-processor'))
         except Exception as e:
             print(e)
             return html.Div([
                 'There was an error processing this folder.'])
     else:
         return []
+
+@app.callback(Output('input-processor', 'children'),
+              Input('diary-input', 'value'),
+              State('diary-dropdown', 'options'))
+def saveDiaryModel(input, options):
+    os.rename(f'assets/saved_model/{diary_model}/', f'assets/saved_model/{input}/')
+    options.append(input)
 
 
 # @app.callback(
@@ -242,17 +254,17 @@ def selectModel(value, contents, clicks, filename):
 #                      args=(progress_queue, base_model_string, data_file, output_dir, num_epochs)).start()
 #     return (0,)
 
-@app.callback(Output('speech-output', 'children'),
-              Input('start_work', 'n_clicks'))
-def start_work(licks):
-    time.sleep(60)
-
-    return (None)
-
-@app.callback(Output('hintOutput', 'children'),
-              Input('hitns', 'n_clicks'))
-def display_help(clicks):
-    if clicks % 2 == 1:
-        return html.Div(html.Link(href='Informations buttons.docx'))
-    else:
-        return []
+# @app.callback(Output('speech-output', 'children'),
+#               Input('start_work', 'n_clicks'))
+# def start_work(licks):
+#     time.sleep(60)
+#.
+#     return (None)
+#
+# @app.callback(Output('hintOutput', 'children'),
+#               Input('hitns', 'n_clicks'))
+# def display_help(clicks):
+#     if clicks % 2 == 1:
+#         return html.Div(html.Link(href='Informations buttons.docx'))
+#     else:
+#         return []
