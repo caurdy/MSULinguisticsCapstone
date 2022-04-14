@@ -167,7 +167,7 @@ class ASRTimeAligner:
 
     def punctuate(self, text):
         """
-        Wrapper for punctation model inference since their APIS differ
+        Wrapper for punctuation model inference since their APIS differ
         """
         if torch.cuda.is_available() and self.useCuda:
             punc_restored = self.punctuationModel.punctuate(text, lang="en")

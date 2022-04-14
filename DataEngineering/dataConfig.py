@@ -5,12 +5,9 @@ Functions for cleaning and prepping the data for training
 
 import os
 import re
-from librosa.core import load
+from librosa.core import load, get_duration
 import pandas as pd
 import datasets
-
-# ToDo
-#  Add parameter for file size convertToDataframe
 
 # Notes
 # Special Characters in transcripts:
@@ -21,7 +18,13 @@ import datasets
 chars_to_ignore_regex = r'[\d\,\?\.\!\-\;\:\"\}\{\©\[\]\)\(\+\-\*\¼\%]'
 
 
-def convertToDataframe(transcript_dir: str = '../Data/Transcripts/', audio_dir: str = '../Data/wav/') -> pd.DataFrame():
+def remove_special_characters(batch):
+    return re.sub(chars_to_ignore_regex, '', batch).lower() + " "
+
+
+def convertToDataframe(transcript_dir: str = '../Data/Transcripts/', audio_dir: str = '../Data/wav/',
+                       filesize_limit: float = None, output_dir: str = "../Data/",
+                       train_size: float = None) -> pd.DataFrame():
     """
     Convert a directory of transcripts and audios to a single pandas dataframe
     This version currently loads corrected transcripts only
@@ -30,20 +33,23 @@ def convertToDataframe(transcript_dir: str = '../Data/Transcripts/', audio_dir: 
         The transcript directory has headers seperated by tabs in the order:
             Speaker, Header2, Chunk_start, Chunk_End, Chunk
         The transcript and corresponding audio file have the same filename (only differentiated by filetype)
+    :param train_size:
+    :param output_dir:
+    :param filesize_limit:
     :param transcript_dir: directory holding transcripts
     :param audio_dir: directory holding audio files
     :return: Pandas Dataframe
     """
-    df = pd.DataFrame(columns=['file', 'text', 'audio', 'sampling_rate'])
+    df_train = pd.DataFrame(columns=['file', 'text', 'audio', 'sampling_rate'])
+    df_test = pd.DataFrame(columns=['file', 'text', 'audio', 'sampling_rate'])
 
-    i = 0
     # Read transcripts into dataframe
     for filename in os.listdir(transcript_dir):
         if 'corrected' not in filename:
             continue
 
         path = os.path.join(transcript_dir, filename)
-        if os.path.getsize(path) > 1000:  # skip files over 10KB
+        if filesize_limit and os.path.getsize(path) > filesize_limit:  # skip files over 10KB
             continue
 
         data = {'file': filename}
@@ -52,6 +58,7 @@ def convertToDataframe(transcript_dir: str = '../Data/Transcripts/', audio_dir: 
             transcript = ""
             for line in fp.readlines():
                 transcript += line.split('\t')[-1].replace('\n', ' ')  # get the last split assumed to be the text
+            transcript = " " + re.sub(chars_to_ignore_regex, '', transcript).lower() + " "  # clean transcript
             data['text'] = transcript
 
         filename = filename.replace('-corrected', '')
@@ -60,16 +67,31 @@ def convertToDataframe(transcript_dir: str = '../Data/Transcripts/', audio_dir: 
         audio_array, sampling_rate = load(audio_path, sr=16000)  # files loaded at 22050 SR for some reason by default
         data['audio'] = audio_array
         data['sampling_rate'] = sampling_rate
+        duration = round(get_duration(load(audio_path, sr=16000)[0]), 5)
+        data['duration'] = duration
+        df_train.loc[len(df_train.index)] = data
 
-        df.loc[len(df.index)] = data
-        i += 1
-        if i == 3:
-            break
+    if train_size:
+        test_size = df_train['duration'].sum() * (1 - train_size)
+        duration = 0
+        # Allocating examples to test_size
+        for i, row in df_train.iterrows():
+            duration += row['duration']
+            df_test.loc[len(df_test.index)] = row
+            df_train.drop(i, axis=0, inplace=True)
+            if duration >= test_size:
+                break
 
-    return df
+    filename_train = "wav2vec2trainUnder{}KB.json".format(str(filesize_limit)) if filesize_limit else "wav2vec2train.json"
+    filename_test = "wav2vec2testUnder{}KB.json".format(str(filesize_limit)) if filesize_limit else "wav2vec2test.json"
+
+    df_train.to_json(os.path.join(output_dir, filename_train))
+    df_test.to_json(os.path.join(output_dir, filename_test))
+    return df_train, df_test
 
 
-def convertToDataset(transcript_dir: str = '../Data/Transcripts/', audio_dir: str = '../Data/wav/',) -> datasets.Dataset:
+def convertToDataset(transcript_dir: str = '../Data/Transcripts/',
+                     audio_dir: str = '../Data/wav/', ) -> datasets.Dataset:
     """
     Convert a directory of transcripts and audios to a HuggingFace Dataset
     """
@@ -78,10 +100,6 @@ def convertToDataset(transcript_dir: str = '../Data/Transcripts/', audio_dir: st
     print(dataset)
 
     return dataset
-
-
-def remove_special_characters(batch):
-    return re.sub(chars_to_ignore_regex, '', batch).lower() + " "
 
 
 def extract_all_chars(batch):
@@ -120,12 +138,4 @@ def prepare_dataset(batch):
 
 
 if __name__ == '__main__':
-    #processor = None
-    #df = convertToDataframe()
-    #df['text'] = df['text'].apply(remove_special_characters)
-    # vocab = createVocabulary(df['text'])
-    # prepare dataset
-    # remove audio from dataset
-    # df.to_json('../Data/corrected.json')
-
-    convertToDataset()
+    convertToDataframe(filesize_limit=1000)

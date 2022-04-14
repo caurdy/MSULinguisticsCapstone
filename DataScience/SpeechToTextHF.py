@@ -127,7 +127,7 @@ class Wav2Vec2ASR:
             warmup_steps=1000,
             save_total_limit=2,
             push_to_hub=False,
-            no_cuda=True
+            no_cuda=self.use_cuda
         )
         trainer = Trainer(
             model=self.model,
