@@ -5,7 +5,6 @@ import threading
 import time
 from queue import Queue
 
-from Tools.scripts.ndiff import fopen
 from dash.dependencies import Output, Input, State
 from dash import dcc, html, callback_context
 import dash_bootstrap_components as dbc
@@ -211,11 +210,12 @@ def selectModel(value, contents, clicks, filename):
             diary_model = new_model_name
             # os.mkdir(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}')
             # open(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}/{filename}', 'w')
-            return html.Div(
+            return html.Div([
                 html.H5(
                     f'The Diarization Error Rate was {old} and it is {new} right now. Model Saved as "{new_model_name}"!'),
-            html.Input("Name the new model", id='diary-input'),
-            html.Div(children=[], id='input-processor'))
+            dcc.Input(id="diary-input", type="text", placeholder="Name the new model", n_submit=0),
+            html.Div(children=[], id='input-processor')
+            ])
         except Exception as e:
             print(e)
             return html.Div([
@@ -225,10 +225,13 @@ def selectModel(value, contents, clicks, filename):
 
 @app.callback(Output('input-processor', 'children'),
               Input('diary-input', 'value'),
+              Input('diary-input', 'n_submit'),
               State('diary-dropdown', 'options'))
-def saveDiaryModel(input, options):
-    os.rename(f'assets/saved_model/{diary_model}/', f'assets/saved_model/{input}/')
-    options.append(input)
+def saveDiaryModel(input, submit, options):
+    if input and submit > 0:
+        os.rename(f'/assets/saved_model/{diary_model}/', f'/assets/saved_model/{input}/')
+        options.append(input)
+
 
 
 # @app.callback(
