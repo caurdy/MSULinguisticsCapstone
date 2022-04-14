@@ -39,7 +39,8 @@ class SpeakerDiaImplement:
 
     def GetPipline(self):
         pipeline = pipelines.SpeakerDiarization(segmentation=self.model,
-                                                embedding=self.embedding)
+                                                embedding=self.embedding,
+                                                segmentation_batch_size=8)
         pipeline.instantiate(self.pipline_parameter)
         return pipeline
 
