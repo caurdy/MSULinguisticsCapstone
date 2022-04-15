@@ -40,8 +40,8 @@ def convertToDataframe(transcript_dir: str = '../Data/Transcripts/', audio_dir: 
     :param audio_dir: directory holding audio files
     :return: Pandas Dataframe
     """
-    df_train = pd.DataFrame(columns=['file', 'text', 'audio', 'sampling_rate'])
-    df_test = pd.DataFrame(columns=['file', 'text', 'audio', 'sampling_rate'])
+    df_train = pd.DataFrame(columns=['file', 'text', 'audio', 'sampling_rate', 'duration'])
+    df_test = pd.DataFrame(columns=['file', 'text', 'audio', 'sampling_rate', 'duration'])
 
     # Read transcripts into dataframe
     for filename in os.listdir(transcript_dir):
@@ -64,6 +64,7 @@ def convertToDataframe(transcript_dir: str = '../Data/Transcripts/', audio_dir: 
         filename = filename.replace('-corrected', '')
         filename = filename.split('.')[0] + '.wav'
         audio_path = os.path.join(audio_dir, filename)
+        # floating points take up lots of memory we should look into using fp32/16 or something smaller for these arrays
         audio_array, sampling_rate = load(audio_path, sr=16000)  # files loaded at 22050 SR for some reason by default
         data['audio'] = audio_array
         data['sampling_rate'] = sampling_rate
@@ -138,4 +139,4 @@ def prepare_dataset(batch):
 
 
 if __name__ == '__main__':
-    convertToDataframe(filesize_limit=1000)
+    convertToDataframe('../Data/Transcripts', '../Data/wav', filesize_limit=10000)

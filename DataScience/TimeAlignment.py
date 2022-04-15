@@ -10,7 +10,7 @@ import sys
 import inspect
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-os.environ["CUDA_VISIBLE_DEVICES"] = ""  # comment this out and pass use_cuda=True to enable gpus
+#os.environ["CUDA_VISIBLE_DEVICES"] = ""  # comment this out and pass use_cuda=True to enable gpus
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
@@ -141,14 +141,14 @@ class ASRTimeAligner:
         """
         Punctuate and run NER on last transcript, return and store results in transcripts
         """
-
         transcript = self.transcripts[-1]
-        # with open('../Combine/whosonfirst.json') as file:
-        #     transcript = json.load(file)p
 
         punc_time = 0
         ner_time = 0
         for entry in transcript:
+            if entry['Transcript'] == "":
+                transcript.remove(entry)
+                continue
             sentence = entry["Transcript"].lower()
             time1 = time.perf_counter()
             punc_restored = self.punctuate(sentence)
@@ -193,13 +193,28 @@ class ASRTimeAligner:
 if __name__ == '__main__':
     run_cuda_setup()
     file = '../assets/0short_audio.wav'
-    timeAligner = ASRTimeAligner(useCuda=False)
+    timeAligner = ASRTimeAligner(useCuda=True)
     # print('After intialization\n', torch.cuda.memory_summary(abbreviated=True))
     # print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
-    transcriptions, dt, tt, avg_confidence = timeAligner.timeAlign(file)
-    print(dt, tt, '\n', transcriptions)
-    transcript, t1, t2 = timeAligner.getEntitiesLastTranscript()
-    print(t1, t2, '\n', transcript)
+    dtt, ttt, t1t, t2t = 0, 0, 0, 0
+
+    with open('../Data/minuteFiles.txt', 'r') as fp:
+        for file in fp.readlines():
+            file = os.path.join('../Data/wav', file.strip())
+            print('Processing', file)
+            transcriptions, dt, tt, avg_confidence = timeAligner.timeAlign(file)
+            print(dt, tt, '\n', transcriptions)
+            transcript, t1, t2 = timeAligner.getEntitiesLastTranscript()
+            print(t1, t2, '\n', transcript)
+            dtt += dt
+            ttt += tt
+            t1t = t1
+            t2t = t2
+    print('Average runtimes on files btwn 55 and 65 seconds')
+    print('Average diarization runtime:', dtt/24)
+    print('Average asr runtime:', ttt / 24)
+    print('Average punc time:', t1t/24)
+    print('Average ner time:', t2t/24)
     # for i in range(3):
     # print(torch.cuda.memory_summary('cuda:'+str(i), abbreviated=True))
     # print(torch.cuda.memory_summary(abbreviated=True))
