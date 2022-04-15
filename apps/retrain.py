@@ -21,7 +21,7 @@ from PyannoteProj.data_preparation.saved_model import model_0, model_1
 
 from starter import app
 
-du.configure_upload(app, 'assets/', use_upload_id=True)
+du.configure_upload(app, 'assets/TrainingData/', use_upload_id=True)
 
 progress_queue = Queue(1)
 progress_memory = 0
@@ -128,28 +128,35 @@ def update_output(value):
                 [html.H4("Select a Base Model and Upload a Folder containing a LIST, RTTM, UEM, and WAV set"),
                  html.Hr(),
                  dcc.Dropdown(data, id='diary-dropdown'),
-                 dcc.Upload(
+                 du.Upload(
                      id='diary-model',
-                     children=html.Div([
-                         html.Button(id="diarytrainButt", children=[
-                             'Drag and Drop or ',
-                             html.A('Select a Folder'), ], n_clicks=0,
-                                     style={
-                                         'width': '100%',
-                                         'height': '60px',
-                                         'lineHeight': '60px',
-                                         'borderWidth': '1px',
-                                         'borderStyle': 'dashed',
-                                         'borderRadius': '5px',
-                                         'textAlign': 'center',
-                                         'margin': '10px',
-                                         # 'margin-left': '300px',
-                                     }, )
+                     text= 'Drag and Drop a Training Set Folder',
+                     cancel_button=True,
+                     upload_id='diary-model',
+                     max_file_size=200000000,
+                     max_files=800,
+                     filetypes=['rttm', 'txt', 'uem', '.wav', 'zip'],
 
-                     ]),
-
-                     # Allow multiple files to be uploaded
-                     multiple=True,
+                     # children=html.Div([
+                     #     html.Button(id="diarytrainButt", children=[
+                     #         'Drag and Drop or ',
+                     #         html.A('Select a Folder'), ], n_clicks=0,
+                     #                 style={
+                     #                     'width': '100%',
+                     #                     'height': '60px',
+                     #                     'lineHeight': '60px',
+                     #                     'borderWidth': '1px',
+                     #                     'borderStyle': 'dashed',
+                     #                     'borderRadius': '5px',
+                     #                     'textAlign': 'center',
+                     #                     'margin': '10px',
+                     #                     # 'margin-left': '300px',
+                     #                 }, )
+                     #
+                     # ]),
+                     #
+                     # # Allow multiple files to be uploaded
+                     # multiple=True,
                      # style={'margin-left': '300px'}
                  ),
                  html.Div(id='diary-output', children=[]),
@@ -185,15 +192,16 @@ def selectModel(value, contents, clicks, filename, dropdown_options):
 @app.callback(Output('diary-output', 'children'),
               # Output('diary-dropdown', 'options'),
               Input('diary-dropdown', 'value'),
-              Input('diary-model', 'contents'),
-              Input('diarytrainButt', 'n_clicks'),  # Use N_clicks to reDraw and name displayed Models
+              Input('diary-model', 'isCompleted'),
               State('diary-model', 'filename'),
               # State('diary-dropdown', 'options'), # Use to append item to the dropdown
               prevent_initial_callback=True, )
-def selectModel(value, contents, clicks, filename):
+def selectModel(value, completed, filename):
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
     # if 'diary-dropdown' in changed_id:
-    if value is not None and contents is not None:
+    if not completed:
+        return
+    if value is not None and filename is not None:
         # content_type, content_string = contents.split(',')
         # decoded = base64.b64decode(content_string)
         try:
@@ -205,7 +213,7 @@ def selectModel(value, contents, clicks, filename):
             dia_pipeline = SpeakerDiaImplement()
             dia_pipeline.AddPipeline(model_name=f"assets/saved_model/{value}/seg_model.ckpt",
                                      parameter_name=f"assets/saved_model/{value}/hyper_parameter.json")
-            old, new, new_model_name = dia_pipeline.TrainData('SampleData')
+            old, new, new_model_name = dia_pipeline.TrainData(f'assets/{filename[:-4]}')
             global diary_model
             diary_model = new_model_name
             # os.mkdir(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}')

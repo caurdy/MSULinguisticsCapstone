@@ -6,10 +6,14 @@ from starter import app
 import time
 import json
 from DataScience.TimeAlignment import ASRTimeAligner
+import tensorflow
+import torch
 
 var = tuple()
 
 timeAligner = ASRTimeAligner(diarizationModelPath="PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52")
+
+
 
 layout = html.Div([
     html.H3("Upload Audio (.wav) Files for Transcription", style={'margin-left': '300px'}),
