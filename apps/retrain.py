@@ -1,11 +1,9 @@
 # Add Model Retraining Page Here
 # GET BUTTONS
 import base64
-import threading
 import time
 from queue import Queue
 
-from Tools.scripts.ndiff import fopen
 from dash.dependencies import Output, Input, State
 from dash import dcc, html, callback_context
 import dash_bootstrap_components as dbc
@@ -14,11 +12,11 @@ import json
 import dash_uploader as du
 from dash.exceptions import PreventUpdate
 
-from DataScience.SpeechToTextHF import Wav2Vec2ASR
+# from DataScience.SpeechToTextHF import Wav2Vec2ASR
 from assets.TestPipline import SpeakerDiaImplement
-from assets.database_loader import CreateDatabase
-from DataScience.DashProgress import DashProgress
-from PyannoteProj.data_preparation.saved_model import model_0, model_1
+# from assets.database_loader import CreateDatabase
+# from DataScience.DashProgress import DashProgress
+# from PyannoteProj.data_preparation.saved_model import model_0, model_1
 
 from starter import app
 

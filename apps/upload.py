@@ -9,7 +9,7 @@ from DataScience.TimeAlignment import ASRTimeAligner
 
 var = tuple()
 
-timeAligner = ASRTimeAligner(diarizationModelPath="PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52")
+timeAligner = ASRTimeAligner(diarizationModelPath="PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52", useCuda=False)
 
 layout = html.Div([
     html.H3("Upload Audio (.wav) Files for Transcription", style={'margin-left': '300px'}),
@@ -115,7 +115,7 @@ def parse_contents(contents, filename, date, cnt, store):
                         },
                         style_cell={'textAlign': 'left'},
                         style_table={'textAlign': 'center', 'width': '1050px'},
-                        editable=True,
+                        # editable=True,
                     ),
 
                     html.Hr(),  # horizontal line
