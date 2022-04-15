@@ -12,6 +12,7 @@ from dataclasses import dataclass
 import os
 
 os.environ["WANDB_DISABLED"] = "true"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6,7"
 
 
 def run_cuda_setup():
@@ -99,14 +100,17 @@ class Wav2Vec2ASR:
         self.usingLM = None
         self.use_cuda = use_cuda
 
-    def train(self, datafile, outputDir, num_epochs=30):
+    def train(self, datafile_train, datafile_test, outputDir, num_epochs=30):
 
         if self.model is None or self.processor is None:
             raise Exception("Ensure both the Model and Processor are set")
 
-        df = pd.read_json(datafile)
-        df = df.apply(self.prepare_dataset, axis=1)
-        dataset = Dataset.from_pandas(df.loc[:5])  # Can't train on entire dataframe, not enough RAM
+        df_train = pd.read_json(datafile_train)
+        df_test = pd.read_json(datafile_test)
+        df_train = df_train.apply(self.prepare_dataset, axis=1)
+        df_test = df_test.apply(self.prepare_dataset, axis=1)
+        dataset_train = Dataset.from_pandas(df_train) # use .from_pandas(df.loc[:n]) to only load n example to save RAM for now, need to implement batch loading
+        dataset_test = Dataset.from_pandas(df_test)
 
         data_collator = DataCollatorCTCWithPadding(processor=self.processor, padding=True)
 
@@ -127,15 +131,15 @@ class Wav2Vec2ASR:
             warmup_steps=1000,
             save_total_limit=2,
             push_to_hub=False,
-            no_cuda=True
+            no_cuda=not self.use_cuda
         )
         trainer = Trainer(
             model=self.model,
             data_collator=data_collator,
             compute_metrics=self.compute_metrics,
             args=training_args,
-            eval_dataset=dataset,
-            train_dataset=dataset,
+            eval_dataset=dataset_test,
+            train_dataset=dataset_train,
             tokenizer=self.processor.feature_extractor,
         )
 
@@ -275,13 +279,13 @@ if __name__ == "__main__":
     # example use case
     # model = "patrickvonplaten/wav2vec2-base-100h-with-lm"
     model = "facebook/wav2vec2-large-960h-lv60-self"
-    asr_model = Wav2Vec2ASR()
+    asr_model = Wav2Vec2ASR(use_cuda=True)
     asr_model.loadModel(model)
 
-    # asr_model.train('../Data/correctedShort.json', '../Data/', 3)
-    filename = "../assets/AbbottCostelloWhosonFirst_30.wav"
-    transcript, _ = asr_model.predict(filename)
-    basePath = os.path.dirname(os.path.abspath(__file__))
-    # asr_model.saveModel("Data/Models/HFTest/")
-    with open("hftest.txt", 'w') as output:
-        output.write(transcript)
+    asr_model.train('../Data/wav2vec2trainUnder10000KB.json', '../Data/wav2vec2testUnder10000KB.json', '../Data/', 3)
+    #filename = "../assets/AbbottCostelloWhosonFirst_30.wav"
+    #transcript, _ = asr_model.predict(filename)
+    #basePath = os.path.dirname(os.path.abspath(__file__))
+    asr_model.saveModel("Data/Models/HFTest/")
+    #with open("hftest.txt", 'w') as output:
+        #output.write(transcript)
