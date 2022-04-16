@@ -74,8 +74,8 @@ class SpeakerDiaImplement:
         print("{} done".format(audioPath))
         return rttm_path
 
-    def TrainData(self, dataset_name, epoch_num=2):
-        trainer, trained_model, der_pretrained, der_finetuned = Train(self.model, dataset_name, num_epoch=epoch_num)
+    def TrainData(self, dataset_name, save_folder="data_preparation/saved_model", epoch_num=2):
+        trainer, trained_model, der_pretrained, der_finetuned = Train(self.model, dataset_name, save_folder, num_epoch=epoch_num)
         print(trainer)
         print("The previous segmentation error rate is '{}', and the new one is '{}'".format(der_pretrained * 100,
                                                                                              der_finetuned * 100))

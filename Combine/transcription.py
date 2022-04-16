@@ -1,38 +1,35 @@
-import pandas as pd
+import os
+import sys
+import inspect
+
 from DataScience.SpeechToTextHF import Wav2Vec2ASR
 from NamedEntityRecognition.ner import ner
 from PyannoteProj.TestPipline import SpeakerDiaImplement
-# import nemo.collections.asr as nemo_asr
+from fastpunct import FastPunct
+from rpunct import RestorePuncts
+
 import json
 import librosa
-from pyannote.audio import pipelines
-from pyannote.audio import Model
-from transformers import Wav2Vec2ForCTC, Wav2Vec2CTCTokenizer, Wav2Vec2FeatureExtractor, Wav2Vec2Processor
-import os
 import time
+import pandas as pd
+import torch.cuda
 
-# TOKENIZER = Wav2Vec2CTCTokenizer.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
-# MODEL = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
-# FEATURE_EXTRACTOR = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0,
-#                                              do_normalize=True, return_attention_mask=False)
-# PROCESSOR = Wav2Vec2Processor(feature_extractor=FEATURE_EXTRACTOR, tokenizer=TOKENIZER)
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+#os.environ["CUDA_VISIBLE_DEVICES"] = ""  # comment this out and pass use_cuda=True to enable gpus
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0, parentdir)
 
-# test using test.rttm
-#
-# Steps
-# 1. Call diarization function and create rttm file
-# 2. Convert rttm file to csv
-# 3. Loop through csv file and segment audio file using the start and end time frame
-# 4. Call Speech to text for each segmented audio file
-# 5. Record the result and save it into a text file with start, end time, and speaker ID
 
-# example file_info list of dictionaries to fill out
-final_info = [
-    {"start": "01:003", "end": "02.035",
-     "speaker": "1", "transcript": ""},
-    {"start": "02:045", "end": "023035",
-     "speaker": "2", "transcript": ""}
-]
+def run_cuda_setup():
+    if torch.cuda.is_available():
+        torch.cuda.set_device('cuda:0')
+        print('Set device to', torch.cuda.current_device())
+        print('Current memory stats\n', torch.cuda.memory_summary(abbreviated=True))
+        # for i in range(1, 3):
+        #     print(torch.cuda.memory_summary('cuda:' + str(i), abbreviated=True))
+    else:
+        print("CUDA not available, defaulting to CPU")
 
 
 # audio: the directory of the audio file
@@ -47,10 +44,9 @@ def combineFeatures(audio_path: str, transcript_name: str, asr_model: str, dia_m
     diarization_time2 = time.perf_counter()
 
     # Convert rttm file to csv
-    only_name = audio_path.split('.')[0]
     dair_csv = pd.read_csv(diarization_result, delimiter=' ', header=None)
     dair_csv.columns = ['Type', 'Audio File', 'IDK', 'Start Time', 'Duration', 'N/A', 'N/A', 'ID', 'N/A', 'N/A']
-    # os.remove(f'./PyannoteProj/OutputSet/{only_name}.rttm')
+    os.remove(f'./Data/Audio/{transcript_name}.rttm')
 
     # Read Audio file
     data, sample_rate = librosa.core.load(audio_path, sr=16000)
@@ -78,7 +74,7 @@ def combineFeatures(audio_path: str, transcript_name: str, asr_model: str, dia_m
                                # "Named Entity": str(namedEntity)})
 
     process_end_time = time.perf_counter()
-    with open(f"./Data/Transcriptions/{transcript_name}.json", "w") as jsonFile:
+    with open(f"./Data/Transcripts/{transcript_name}_transcript.json", "w") as jsonFile:
         json.dump(transcriptions, jsonFile)
 
     diarization_time = round(diarization_time2 - diarization_time1, 3)

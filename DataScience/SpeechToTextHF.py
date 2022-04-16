@@ -184,9 +184,10 @@ class Wav2Vec2ASR:
                 # print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
 
             logits = self.model(input_values).logits
-            probs = self.SOFTMAX_TORCH(logits)
-            max_probs = torch.max(probs, dim=-1)[0]
-            confidence = (torch.sum(max_probs) / len(max_probs[0])).cpu().numpy()
+            # probs = self.SOFTMAX_TORCH(logits)
+            # max_probs = torch.max(probs, dim=-1)[0]
+            # confidence = (torch.sum(max_probs) / len(max_probs[0])).cpu().numpy()
+            confidence = 1
             # print('After confidence calculations\n', torch.cuda.memory_summary(abbreviated=True))
             # print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
 

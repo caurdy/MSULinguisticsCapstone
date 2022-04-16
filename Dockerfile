@@ -9,6 +9,7 @@ ENV PYTHONPATH /usr/src/app
 RUN apt-get update -y && apt-get install git -y --no-install-recommends build-essential gcc libsndfile1
 
 RUN pip install -r requirements.txt
+RUN pip install --no-deps rpunct~=1.0.2
 #RUN pip install https://github.com/kpu/kenlm/archive/master.zip
 ENTRYPOINT ["python", "-u", "./execute.py"]
 

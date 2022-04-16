@@ -39,8 +39,8 @@ def evaluation(model, protocol, subset="test"):
     return abs(metric)
 
 
-def Train(model, data_name, num_epoch=2):
-    folder = 'data_preparation/saved_model'
+def Train(model, data_name, save_folder, num_epoch=2):
+    folder = save_folder
     folder = Path(folder).absolute()
     sub_folders = [name for name in os.listdir(folder) if os.path.isdir(os.path.join(folder, name))]
     print("the current model", sub_folders)
