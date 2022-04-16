@@ -27,6 +27,7 @@ from NamedEntityRecognition.ner import ner
 from fastpunct import FastPunct
 from rpunct import RestorePuncts
 
+import tensorflow
 
 def run_cuda_setup():
     if torch.cuda.is_available():
@@ -69,8 +70,17 @@ class ASRTimeAligner:
         else:
             if torch.cuda.is_available() and useCuda:
                 self.punctuationModel = RestorePuncts()
+                physical_devices = tensorflow.config.list_physical_devices('GPU')
+                try:
+                    tensorflow.config.experimental.set_memory_growth(physical_devices[0], True)
+
+                except:
+                    # Invalid device or cannot modify virtual devices once initialized.
+                    physical_devices = tensorflow.config.PhysicalDevice("CPU")
+                    pass
             else:
                 self.punctuationModel = FastPunct()
+                physical_devices = tensorflow.config.PhysicalDevice("CPU")
 
         if nerModel:
             self.nerModel = nerModel
@@ -87,6 +97,7 @@ class ASRTimeAligner:
         :param audioPath: str path to
         :return: List of json objects, diarization runtime, ASR runtime, Avg. ASR confidence
         """
+
         # print('Before diarization\n', torch.cuda.memory_summary(abbreviated=True))
         # print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
         diarization_time1 = time.perf_counter()
@@ -192,6 +203,19 @@ class ASRTimeAligner:
 
 if __name__ == '__main__':
     run_cuda_setup()
+    if torch.cuda.is_available():
+        physical_devices = tensorflow.config.list_physical_devices('GPU')
+        try:
+            tensorflow.config.experimental.set_memory_growth(physical_devices[0], True)
+
+        except:
+            # Invalid device or cannot modify virtual devices once initialized.
+            physical_devices = tensorflow.config.PhysicalDevice("CPU")
+            pass
+    else:
+        physical_devices = tensorflow.config.PhysicalDevice("CPU")
+
+    # torch.cuda_version()
     file = '../assets/0short_audio.wav'
     timeAligner = ASRTimeAligner(useCuda=True)
     # print('After intialization\n', torch.cuda.memory_summary(abbreviated=True))

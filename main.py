@@ -103,7 +103,8 @@ app.layout = html.Div([
     content,
     dcc.Store(id='stored-data', data=[]),
     dcc.Store(id='click_save'),
-    dcc.Store(id='archive-size')
+    dcc.Store(id='archive-size'),
+    dcc.Store(id='record-clicks')
 ])
 
 

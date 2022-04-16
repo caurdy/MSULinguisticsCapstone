@@ -11,7 +11,8 @@ class SpeakerDiaImplement:
     def __init__(self):
         self.model = Model.from_pretrained('pyannote/segmentation')
         print(type(self.model))
-        self.embedding = 'speechbrain/spkrec-ecapa-voxceleb'
+        # self.embedding = 'speechbrain/spkrec-ecapa-voxceleb'
+        self.embedding = 'pyannote/embedding'
         self.pipline_parameter = {
                                   "onset": 0.810, "offset": 0.481, "min_duration_on": 0.055,
                                   "min_duration_off": 0.098,
