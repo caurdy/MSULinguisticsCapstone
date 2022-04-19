@@ -2,6 +2,7 @@
 # GET BUTTONS
 import base64
 import time
+import webbrowser
 from queue import Queue
 
 from dash.dependencies import Output, Input, State
@@ -76,9 +77,17 @@ layout = html.Div([
     style={'margin-left': '300px'})
 
 
+@app.callback(Output('hintOutput', 'children'),
+              Input('hints', 'n_clicks'))
+def display_help(clicks):
+    if clicks % 2 == 1:
+        # return html.Embed(src="assets/Information buttons-converted.pdf",width="750",height="400"),
+        return html.Div([html.Iframe(src='/assets/Information buttons-converted.pdf')])
+    else:
+        return []
+
 @app.callback(Output('asr-output', 'children'),
-              Input('asr-dropdown', 'value')
-              )
+              Input('asr-dropdown', 'value'))
 def update_output(value):
     if not value:
         return []
@@ -197,7 +206,7 @@ def selectModel(value, contents, clicks, filename, dropdown_options):
               prevent_initial_callback=True, )
 def selectModel(value, completed, filename):
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-    # if 'diary-dropdown' in changed_id:
+    # if 'diary-dropdown' in changed_id:Sample text for typing scenario
     if not completed:
         return
     if value is not None and filename is not None:
@@ -271,10 +280,3 @@ def saveDiaryModel(input, submit, options):
 #.
 #     return (None)
 #
-# @app.callback(Output('hintOutput', 'children'),
-#               Input('hitns', 'n_clicks'))
-# def display_help(clicks):
-#     if clicks % 2 == 1:
-#         return html.Div(html.Link(href='Informations buttons.docx'))
-#     else:
-#         return []
