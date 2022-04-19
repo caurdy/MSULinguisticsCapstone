@@ -45,7 +45,7 @@ def main():
             asr_model = Wav2Vec2ASR()
             asr_model.loadModel(sys.argv[4])
             print(sys.argv[3])
-            asr_model.train("./Data/corrected.json", '../Data/')
+            asr_model.train("./Data/corrected.json","./Data/corrected.json", '../Data/')
             asr_model.saveModel(f"./Data/Models/HF/{sys.argv[5]}")
             print("New asr model is created")
 
