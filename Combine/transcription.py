@@ -36,7 +36,7 @@ final_info = [
 
 
 # audio: the directory of the audio file
-def combineFeatures(audio_path: str, transcript_name: str, model: str, asr_model: str, dia_model: str):
+def combineFeatures(audio_path: str, transcript_name: str, asr_model: str, dia_model: str):
     # Initialize Diarization Class Object and set model.
     dia_pipeline = SpeakerDiaImplement()
     dia_pipeline.AddPipeline(model_name=f"./PyannoteProj/data_preparation/saved_model/{dia_model}/seg_model.ckpt",
@@ -48,21 +48,15 @@ def combineFeatures(audio_path: str, transcript_name: str, model: str, asr_model
 
     # Convert rttm file to csv
     only_name = audio_path.split('.')[0]
-    dair_csv = pd.read_csv(f'./PyannoteProj/OutputSet/{only_name}.rttm', delimiter=' ', header=None)
+    dair_csv = pd.read_csv(diarization_result, delimiter=' ', header=None)
     dair_csv.columns = ['Type', 'Audio File', 'IDK', 'Start Time', 'Duration', 'N/A', 'N/A', 'ID', 'N/A', 'N/A']
-    os.remove(f'./PyannoteProj/OutputSet/{only_name}.rttm')
+    # os.remove(f'./PyannoteProj/OutputSet/{only_name}.rttm')
 
     # Read Audio file
     data, sample_rate = librosa.core.load(audio_path, sr=16000)
     transcriptions = []
-    asr_model = None
-    if model == "-n":
-        print("nemo")
-        return
-        # asr_model = nemo_asr.models.EncDecCTCModel.from_pretrained(model_name='QuartzNet15x5Base-En', strict=False)
-    elif model == "-h":
-        asr_model = Wav2Vec2ASR()
-        asr_model.loadModel(asr_model)
+    asr_m = Wav2Vec2ASR()
+    asr_m.loadModel(asr_model)
 
     # Loop through all the rows in diarization file which will give us start/end times for audio section to transcribe
     total_conf = 0
@@ -73,27 +67,18 @@ def combineFeatures(audio_path: str, transcript_name: str, model: str, asr_model
         start_frame = int(sample_rate * start_t)
         end_frame = int(sample_rate * end_t)
         section = data[start_frame: end_frame]
-        transcript = ""
-        if model == "-n":
-            return
-            # save audio file temporally and delete it after transcript is written.
-            # librosa.output.write_wav('./Data/audio_for_nemo_temp.wav', data, sample_rate)
-            # transcript = asr_model.transcribe(paths2audio_files='./Data/audio_for_nemo_temp.wav')[0]
-            # os.remove('./Data/audio_for_nemo_temp.wav')
-        elif model == "-h":
-            transcript = asr_model.predict_segment(data)
-        # transcript, confidence = getTranscript(section, model=MODEL, processor=PROCESSOR)
+        transcript, _ = asr_m.predict(audioArray=section)
         # total_conf += confidence
-        #namedEntity = ner(transcript)
+        # namedEntity = ner(transcript)
         transcriptions.append({"Start (sec.)": str(start_t),
                                "End (sec.)": str(end_t),
                                "Speaker": str(row['ID']),
                                "Transcript": str(transcript)})
                                # "Confidence": str(confidence),})
-                               #"Named Entity": str(namedEntity)})
+                               # "Named Entity": str(namedEntity)})
 
     process_end_time = time.perf_counter()
-    with open(f"./Transcriptions/{transcript_name}.json", "w") as jsonFile:
+    with open(f"./Data/Transcriptions/{transcript_name}.json", "w") as jsonFile:
         json.dump(transcriptions, jsonFile)
 
     diarization_time = round(diarization_time2 - diarization_time1, 3)

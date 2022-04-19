@@ -103,7 +103,8 @@ app.layout = html.Div([
     content,
     dcc.Store(id='stored-data', data=[]),
     dcc.Store(id='click_save'),
-    dcc.Store(id='archive-size')
+    dcc.Store(id='archive-size'),
+    dcc.Store(id='record-clicks')
 ])
 
 
@@ -123,4 +124,4 @@ def display_page(pathname):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True, dev_tools_hot_reload=False)
+    app.run_server(debug=False, dev_tools_hot_reload=False)

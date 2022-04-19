@@ -1,18 +1,26 @@
 import base64
 import datetime
+from scipy.io.wavfile import write
 from dash.dependencies import Input, Output, State
 from dash import dcc, html, dash_table, callback_context
 from starter import app
 import time
 import json
 from DataScience.TimeAlignment import ASRTimeAligner
+import tensorflow
+import torch
+import sounddevice as sd
 
 var = tuple()
 
-timeAligner = ASRTimeAligner(diarizationModelPath="PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52")
+timeAligner = ASRTimeAligner(diarizationModelPath="PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52", useCuda=True)
+
+
 
 layout = html.Div([
-    html.H3("Upload Audio (.wav) Files for Transcription", style={'margin-left': '300px'}),
+    html.H3("Upload Audio (.wav) Files for Transcription or Record an Audio", style={'margin-left': '300px'}),
+    html.Div([
+    html.Button("Record Your Own Audio", id='record', n_clicks=0)], style={'margin-left': '300px'}),
     dcc.Upload(
         id='upload-data',
         children=html.Div([
@@ -115,7 +123,7 @@ def parse_contents(contents, filename, date, cnt, store):
                         },
                         style_cell={'textAlign': 'left'},
                         style_table={'textAlign': 'center', 'width': '1050px'},
-                        editable=True,
+                        # editable=True,
                     ),
 
                     html.Hr(),  # horizontal line
@@ -166,3 +174,23 @@ def thePunctuator(clicks):
                 style_cell={'textAlign': 'left'},
                 style_table={'textAlign': 'center', 'width': '1050px'},
             ), ], style={'margin-left': '300px'})
+
+@app.callback(Output('output-div', 'children'),
+              Output('record-clicks', 'data'),
+              Input('record', 'n_clicks'),
+              State('record-clicks', 'data'))
+def recordAudio(clicks, recorded_clicks):
+    changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+    if 'record' in changed_id and clicks > 0:
+        recorded_clicks = recorded_clicks or {'clicks': 0}
+        recorded_clicks['clicks'] = recorded_clicks['clicks'] + 1
+        # filename = f'assets/mywavfile{clicks}.wav'
+        fs = 44100
+        seconds = 10
+        with open(f'assets/mywavfile{clicks}.wav', 'wb') as fp:
+            myrecording = sd.rec(int(seconds * fs), samplerate=fs, channels=2)
+            sd.wait()  # Wait until recording is finished
+            write(f'assets/mywavfile{clicks}.wav', fs, myrecording)  # Save as WAV file
+        return [], recorded_clicks
+    else:
+        return [], recorded_clicks
