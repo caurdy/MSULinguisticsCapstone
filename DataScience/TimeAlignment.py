@@ -31,7 +31,7 @@ import tensorflow
 
 def run_cuda_setup():
     if torch.cuda.is_available():
-        torch.cuda.set_device('cuda:0')
+        torch.cuda.device('cuda')
         print('Set device to', torch.cuda.current_device())
         print('Current memory stats\n', torch.cuda.memory_summary(abbreviated=True))
         # for i in range(1, 3):
