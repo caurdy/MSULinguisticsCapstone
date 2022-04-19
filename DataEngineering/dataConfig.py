@@ -4,10 +4,12 @@ Functions for cleaning and prepping the data for training
 """
 
 import os
+import random
 import re
 from librosa.core import load, get_duration
 import pandas as pd
 import datasets
+from transformers import Wav2Vec2Processor
 
 # Notes
 # Special Characters in transcripts:
@@ -16,6 +18,7 @@ import datasets
 #
 
 chars_to_ignore_regex = r'[\d\,\?\.\!\-\;\:\"\}\{\©\[\]\)\(\+\-\*\¼\%]'
+processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base")
 
 
 def remove_special_characters(batch):
@@ -23,7 +26,7 @@ def remove_special_characters(batch):
 
 
 def convertToDataframe(transcript_dir: str = '../Data/Transcripts/', audio_dir: str = '../Data/wav/',
-                       filesize_limit: float = None, output_dir: str = "../Data/",
+                       min_filesize_limit:float=None, max_filesize_limit: float = None, output_dir: str = "../Data/",
                        train_size: float = None) -> pd.DataFrame():
     """
     Convert a directory of transcripts and audios to a single pandas dataframe
@@ -31,11 +34,12 @@ def convertToDataframe(transcript_dir: str = '../Data/Transcripts/', audio_dir: 
     columns are [file, text, audio, sampling_rate]
     Assumptions:
         The transcript directory has headers seperated by tabs in the order:
-            Speaker, Header2, Chunk_start, Chunk_End, Chunk
+            Speaker, Header2, Chunk_start, Chunk_End, Text
         The transcript and corresponding audio file have the same filename (only differentiated by filetype)
+    :param min_filesize_limit: minimum size of audio file in KB
+    :param max_filesize_limit: maximum size of audio file in KB
     :param train_size:
     :param output_dir:
-    :param filesize_limit:
     :param transcript_dir: directory holding transcripts
     :param audio_dir: directory holding audio files
     :return: Pandas Dataframe
@@ -45,46 +49,65 @@ def convertToDataframe(transcript_dir: str = '../Data/Transcripts/', audio_dir: 
 
     # Read transcripts into dataframe
     for filename in os.listdir(transcript_dir):
+        data = {'file': filename}
+        transcript_path = os.path.join(transcript_dir, filename)
         if 'corrected' not in filename:
             continue
 
-        path = os.path.join(transcript_dir, filename)
-        if filesize_limit and os.path.getsize(path) > filesize_limit:  # skip files over 10KB
-            continue
-
-        data = {'file': filename}
-        with open(path) as fp:
-            fp.readline()  # skip past header
-            transcript = ""
-            for line in fp.readlines():
-                transcript += line.split('\t')[-1].replace('\n', ' ')  # get the last split assumed to be the text
-            transcript = " " + re.sub(chars_to_ignore_regex, '', transcript).lower() + " "  # clean transcript
-            data['text'] = transcript
-
+        # convert transcript filename to audio filename
         filename = filename.replace('-corrected', '')
         filename = filename.split('.')[0] + '.wav'
-        audio_path = os.path.join(audio_dir, filename)
-        # floating points take up lots of memory we should look into using fp32/16 or something smaller for these arrays
-        audio_array, sampling_rate = load(audio_path, sr=16000)  # files loaded at 22050 SR for some reason by default
-        data['audio'] = audio_array
-        data['sampling_rate'] = sampling_rate
-        duration = round(get_duration(load(audio_path, sr=16000)[0]), 5)
-        data['duration'] = duration
-        df_train.loc[len(df_train.index)] = data
 
+        audio_path = os.path.join(audio_dir, filename)
+        filesize_KB = os.path.getsize(audio_path) / 1000
+        if max_filesize_limit and filesize_KB > max_filesize_limit:
+            continue
+        if min_filesize_limit and filesize_KB < min_filesize_limit:
+            continue
+
+        # floating points take up lots of memory we should look into using a smaller float
+        audio_array, sampling_rate = load(audio_path, sr=16000)  # files loaded at 22050 SR for some reason by default
+
+        # Open audio file up,
+        # split audio file into json objects with duration of at most 30 seconds using chunk start/end
+        with open(transcript_path) as fp:
+            fp.readline()  # skip past header
+            transcript = ""
+            chunk_start = 0
+            lines = fp.readlines()
+            for i, line in enumerate(lines):
+                line_list = line.split('\t')
+                chunk_end = float(line_list[-2])
+                transcript += line_list[-1].replace('\n', ' ')  # get the last split assumed to be the text
+                # if the duration is over 25 sec, or this is the last transcript chunk of the file, write to dataframe
+                if chunk_end - chunk_start >= 15 or i == len(lines)-1:
+                    # write this chunk to the df
+                    transcript = " " + re.sub(chars_to_ignore_regex, '', transcript).upper() + " "  # clean transcript
+                    data['text'] = transcript
+                    transcript = ""
+                    # get the slice of the audio array which corresponds to this transcript chunk
+                    start_frame = int(sampling_rate * chunk_start)
+                    end_frame = int(sampling_rate * chunk_end)
+                    section = audio_array[start_frame: end_frame]
+                    data['audio'] = section
+                    data['sampling_rate'] = sampling_rate
+                    data['duration'] = chunk_end - chunk_start
+                    df_train.loc[len(df_train.index)] = data
+                    chunk_start = chunk_end
+
+    # Allocating examples to test dataframe
     if train_size:
         test_size = df_train['duration'].sum() * (1 - train_size)
         duration = 0
-        # Allocating examples to test_size
-        for i, row in df_train.iterrows():
+        while duration < test_size:
+            index = random.randint(0, len(df_train.index)-1)
+            row = df_train.loc[index]
             duration += row['duration']
-            df_test.loc[len(df_test.index)] = row
-            df_train.drop(i, axis=0, inplace=True)
-            if duration >= test_size:
-                break
+            df_test.loc[index] = row
+            df_train.drop(index, axis=0, inplace=True)
 
-    filename_train = "wav2vec2trainUnder{}KB.json".format(str(filesize_limit)) if filesize_limit else "wav2vec2train.json"
-    filename_test = "wav2vec2testUnder{}KB.json".format(str(filesize_limit)) if filesize_limit else "wav2vec2test.json"
+    filename_train = "wav2vec2trainUnder{}KB.json".format(str(max_filesize_limit)) if max_filesize_limit else "wav2vec2train.json"
+    filename_test = "wav2vec2testUnder{}KB.json".format(str(max_filesize_limit)) if max_filesize_limit else "wav2vec2test.json"
 
     df_train.to_json(os.path.join(output_dir, filename_train))
     df_test.to_json(os.path.join(output_dir, filename_test))
@@ -109,7 +132,7 @@ def extract_all_chars(batch):
     return {"vocab": [vocab], "all_text": [all_text]}
 
 
-def createVocabulary(series: pd.Series) -> dict[str: int]:
+def createVocabulary(series: pd.Series):
     text_list = series.tolist()
     textBlob = " ".join(text_list)
     vocabList = set(textBlob)
@@ -127,9 +150,7 @@ def createVocabulary(series: pd.Series) -> dict[str: int]:
 
 def prepare_dataset(batch):
     audio = batch["audio"]
-    processor = None
     # batched output is "un-batched" to ensure mapping is correct
-    # print(processor(audio, sampling_rate=batch['sampling_rate']).input_values[0])
     batch["input_values"] = processor(audio, sampling_rate=batch['sampling_rate']).input_values[0]
     batch["input_length"] = len(batch["input_values"])
 
@@ -139,4 +160,6 @@ def prepare_dataset(batch):
 
 
 if __name__ == '__main__':
-    convertToDataframe('../Data/Transcripts', '../Data/wav', filesize_limit=10000)
+    convertToDataframe('../Data/Transcripts', '../Data/wav',
+                       min_filesize_limit=0, max_filesize_limit=
+                       1000, train_size=0.90)

@@ -19,9 +19,11 @@ def cleanTranscripts():
 def transcriptStatistics():
     count = 0
     for filename in os.listdir(newDir):
-        if 'correct' in filename:
+        path = os.path.join(newDir, filename)
+        size = os.path.getsize(path)
+        if 'correct' in filename and size <= 10000:
             count += 1
-    print('Number of corrected transcripts', count)
+    print('Number of corrected transcripts ', count, 'less than 10 kb')
 
 
 def sizeStatistics():
@@ -39,18 +41,15 @@ def sizeStatistics():
 def durationStatistics():
     count = 0
     filenames = []
+    durationTotal = 0
     for filename in os.listdir(newDir):
         path = os.path.join(newDir, filename)
         size_kb = os.path.getsize(path) / 1000
-        if size_kb <= 3000:
-            duration = round(get_duration(load(path, sr=16000)[0]), 3)
-            if 55 <= duration <= 65:
-                filenames.append(filename)
-                count += 1
-    with open('../Data/minuteFiles.txt', 'a') as fp:
-        for name in filenames:
-            fp.write(name + '\n')
-    print('Number of files between 55/65 secs', count)
+        if size_kb:
+            durationTotal += round(get_duration(load(path, sr=16000)[0]), 3)
+            count += 1
+
+    print('Total duration of files btwn 500 and 20000 KB', durationTotal, ' num:', count)
 
 
 if __name__ == "__main__":
