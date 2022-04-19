@@ -173,6 +173,7 @@ def update_output(value):
                  html.Button('Start Training the Model', id='diary-train', n_clicks=0),
                  html.Div(id='diary-input', children=[]),
                  html.Div(id='diary-output', children=[]),
+                 html.Div(id='true-dtrain', children=[]),
                  ])
     # return f'You have selected {value}'
 
@@ -252,7 +253,6 @@ def selectModel(value, filenames, completed):
             return html.Div([
                 'There was an error processing this folder.'])
     else:
-        # IF TRAIN BUTTON IS CLICKED TRAIN W
         return []
 
 
@@ -265,7 +265,7 @@ def saveDiaryModel(input, submit, options):
         os.rename(f'/assets/saved_model/{input}/', f'/assets/saved_model/{diary_model}/')
         options.append(input)
 
-@app.callback(Output('diary-output', 'children'),
+@app.callback(Output('true-dtrain', 'children'),
               Input('diary-train', 'n_clicks'))
 def TrainDiary(clicks):
     if clicks % 2 == 1:
