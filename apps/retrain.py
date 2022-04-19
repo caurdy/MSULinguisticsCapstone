@@ -29,7 +29,7 @@ base_model_string = "patrickvonplaten/wav2vec2-base-100h-with-lm"
 data_file = "../Data/correctedShort.json"
 output_dir = "/assets/asr_models/"
 num_epochs = 3
-diary_model = ""
+new_diary_model = ""
 
 
 # du.configure_upload(app, )
@@ -238,8 +238,8 @@ def selectModel(value, filenames, completed):
             old = 4
             new = 3
 
-            global diary_model
-            diary_model = new_model_name
+            global new_diary_model
+            new_diary_model = new_model_name
             # os.mkdir(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}')
             # open(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}/{filename}', 'w')
             return html.Div([
@@ -262,7 +262,7 @@ def selectModel(value, filenames, completed):
               State('diary-dropdown', 'options'))
 def saveDiaryModel(input, submit, options):
     if input and submit > 0:
-        os.rename(f'/assets/saved_model/{input}/', f'/assets/saved_model/{diary_model}/')
+        os.rename(f'/assets/saved_model/{new_diary_model}/', f'/assets/saved_model/{input}/')
         options.append(input)
 
 @app.callback(Output('true-dtrain', 'children'),
@@ -270,6 +270,30 @@ def saveDiaryModel(input, submit, options):
 def TrainDiary(clicks):
     if clicks % 2 == 1:
         x = 2
+        # try:
+        #     # SET GLOBALS TO USE IN TRIGGER
+        #
+        #
+        #     dia_pipeline = SpeakerDiaImplement()
+        #     dia_pipeline.AddPipeline(model_name=f"assets/saved_model/{value}/seg_model.ckpt",
+        #                              parameter_name=f"assets/saved_model/{value}/hyper_parameter.json")
+        #     old, new, new_model_name = dia_pipeline.TrainData(f'TrainingData/{filenames[0][32:-4]}')
+        #     # old, new, new_model_name = dia_pipeline.TrainData('TrainingData/SampleData')
+        #
+        #     global new_diary_model
+        #     new_diary_model = new_model_name
+        #     # os.mkdir(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}')
+        #     # open(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}/{filename}', 'w')
+        #     return html.Div([
+        #         html.H5(
+        #             f'The Diarization Error Rate was {old} and it is {new} right now. Model Saved as "{new_model_name}"!'),
+        #         dcc.Input(id="diary-input", type="text", placeholder="Name the new model", n_submit=0),
+        #         html.Div(children=[], id='input-processor')
+        #     ])
+        # except Exception as e:
+        #     print(e)
+        #     return html.Div([
+        #         'There was an error processing this folder.'])
         # get model and training data, call train
 # @app.callback(
 #     [Output("progress_bar", "value")],
