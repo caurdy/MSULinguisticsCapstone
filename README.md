@@ -4,6 +4,8 @@ Working towards an open source Automatic Speech Recognition + Time Alignment doc
 
 ## Installation through GitHub ##
 
+requires Python 3.8 or later
+
 git pull https://github.com/caurdy/MSULinguisticsCapstone.git
 
 pip install -r requirements.txt
