@@ -83,7 +83,7 @@ layout = html.Div([
 def display_help(clicks):
     if clicks % 2 == 1:
         # return html.Embed(src="assets/Information buttons-converted.pdf",width="750",height="400"),
-        return html.Div([html.Iframe(src='/assets/Information buttons-converted.pdf')])
+        return html.Div([html.Iframe(src='/assets/Information buttons-converted.pdf', width='150%', height='1500px')])
     else:
         return []
 
