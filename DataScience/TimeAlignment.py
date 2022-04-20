@@ -63,8 +63,8 @@ class ASRTimeAligner:
         self.asrModel = Wav2Vec2ASR(useCuda)
         self.asrModel.loadModel(asrModel)
         self.diarizationModel = SpeakerDiaImplement()
-        self.diarizationModel.AddPipeline(model_name="{}/seg_model.ckpt".format(diarizationModelPath),
-                                          parameter_name="{}/hyper_parameter.json".format(diarizationModelPath))
+        # self.diarizationModel.AddPipeline(model_name="{}/seg_model.ckpt".format(diarizationModelPath),
+        #                                   parameter_name="{}/hyper_parameter.json".format(diarizationModelPath))
         if punctuationModel:
             self.punctuationModel = punctuationModel
         else:

@@ -83,7 +83,7 @@ layout = html.Div([
 def display_help(clicks):
     if clicks % 2 == 1:
         # return html.Embed(src="assets/Information buttons-converted.pdf",width="750",height="400"),
-        return html.Div([html.Iframe(src='/assets/Information buttons-converted.pdf')])
+        return html.Div([html.Iframe(src='/assets/Information buttons-converted.pdf', width='150%', height='1500px')])
     else:
         return []
 
@@ -210,6 +210,7 @@ def get_files(filenames):
 
 @app.callback(Output('diary-output', 'children'),
               # Output('diary-dropdown', 'options'),
+              Input('diary-train', 'n_clicks'),
               Input('diary-dropdown', 'value'),
               Input('diary-input', 'children'),
               State('upload-files', 'isCompleted'),
@@ -217,59 +218,65 @@ def get_files(filenames):
               # State('diary-dropdown', 'options'), # Use to append item to the dropdown
               prevent_initial_callback=True, )
 # ADD TRIGGER FOR RESEARCHER TO START TRAINING VS AUTOMATIC(Once conditions met)
-def selectModel(value, filenames, completed):
+def selectModel(clicks, value, filenames, completed):
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+    if 'diary-train' in changed_id and clicks > 0:
     # if 'diary-dropdown' in changed_id:Sample text for typing scenario
-    if completed == False:
-        return []
-    if value is not None and filenames is not None:
-        # content_type, content_string = contents.split(',')
-        # decoded = base64.b64decode(content_string)
-        try:
-            # SET GLOBALS TO USE IN TRIGGER
+        if completed == False:
+            return []
+        if value is not None and filenames is not None:
+            try:
+                dia_pipeline = SpeakerDiaImplement()
+                dia_pipeline.AddPipeline(model_name=f"assets/saved_model/{value}/seg_model.ckpt",
+                                         parameter_name=f"assets/saved_model/{value}/hyper_parameter.json")
+                old, new, new_model_name = dia_pipeline.TrainData(f'{filenames[0][32:-4]}')
+                # old, new, new_model_name = dia_pipeline.TrainData('TrainingData/SampleData')
+                # new_model_name = 'test'
+                # old = 4
+                # new = 3
 
-
-            # dia_pipeline = SpeakerDiaImplement()
-            # dia_pipeline.AddPipeline(model_name=f"assets/saved_model/{value}/seg_model.ckpt",
-            #                          parameter_name=f"assets/saved_model/{value}/hyper_parameter.json")
-            # old, new, new_model_name = dia_pipeline.TrainData(f'TrainingData/{filenames[0][32:-4]}')
-            # old, new, new_model_name = dia_pipeline.TrainData('TrainingData/SampleData')
-            new_model_name = 'model_04_19_2022_15_18_17'
-            old = 4
-            new = 3
-
-            global new_diary_model
-            new_diary_model = new_model_name
-            # os.mkdir(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}')
-            # open(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}/{filename}', 'w')
-            return html.Div([
-                html.H5(
-                    f'The Diarization Error Rate was {old} and it is {new} right now. Model Saved as "{new_model_name}"!'),
-                dcc.Input(id="diary-input", type="text", placeholder="Name the new model", n_submit=0),
-                html.Div(children=[], id='input-processor')
-            ])
-        except Exception as e:
-            print(e)
-            return html.Div([
-                'There was an error processing this folder.'])
+                global new_diary_model
+                new_diary_model = new_model_name
+                # os.mkdir(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}')
+                # open(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}/{filename}', 'w')
+                return html.Div([
+                    html.H5(
+                        f'The Diarization Error Rate was {old} and it is {new} right now. Model Saved as "{new_model_name}"!'),
+                    dcc.Input(id="diary-input", type="text", placeholder="Name the new model", n_submit=0),
+                    html.Div(id='input-processor', children=[])
+                ])
+            except Exception as e:
+                print(e)
+                return html.Div([
+                    'There was an error processing this folder.'])
+        else:
+            return []
     else:
         return []
 
 
 @app.callback(Output('input-processor', 'children'),
+              Output('diary-dropdown', 'options'),
               Input('diary-input', 'value'),
               Input('diary-input', 'n_submit'),
               State('diary-dropdown', 'options'))
 def saveDiaryModel(input, submit, options):
     if input and submit > 0:
-        os.rename(f'/assets/saved_model/{new_diary_model}/', f'/assets/saved_model/{input}/')
-        options.append(input)
+        # old_path = os.path.abspath(f'assets/saved_model/{new_diary_model}')
+        # new_path = os.path.abspath('assets/saved_model')
+        os.chdir(os.path.abspath('assets/saved_model/'))
+        os.rename(f'{new_diary_model}', f'{input}')
+        options.append(f'{input}')
+        return f'Model is set to {input}', options
+    else:
+        return [], options
 
-@app.callback(Output('true-dtrain', 'children'),
-              Input('diary-train', 'n_clicks'))
-def TrainDiary(clicks):
-    if clicks % 2 == 1:
-        x = 2
+# @app.callback(Output('true-dtrain', 'children'),
+#               Input('diary-train', 'n_clicks'))
+# def TrainDiary(clicks):
+#     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+#     if 'diary-train' in changed_id:
+#         x = 2
         # try:
         #     # SET GLOBALS TO USE IN TRIGGER
         #

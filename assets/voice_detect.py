@@ -3,7 +3,7 @@ import sys
 import time
 
 sys.path.append('./MSULinguisticsCapstone/PyannoteProj/data_preparation')
-from PyannoteProj.database_loader import DataLoader
+from assets.database_loader import DataLoader
 from copy import deepcopy
 from pyannote.audio.tasks import Segmentation
 import os
