@@ -6,7 +6,11 @@ An open source Automatic Speech Recognition + Time Alignment docker container fo
 
 NOTE: You may need to use "python3" instead of "python" for these cmds
 
-Requires Python 3.8 or later
+Requires Python 3.8 or later and Git
+
+Python Install: https://www.python.org/downloads/ (Recommended python 3.8 or 3.9)
+
+Git Install: https://git-scm.com/download/win
 
 You can find command prompt by searching 'cmd' or 'command prompt' in the windows start portal (bottom left of desktop).
 Move into the directory you want the code to reside in (use `cd`),
