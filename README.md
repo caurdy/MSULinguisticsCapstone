@@ -8,7 +8,6 @@ NOTE: You may need to use "python3" instead of "python" for these cmds
 
 Requires Python 3.8 or later
 
-
 You can find command prompt by searching 'cmd' or 'command prompt' in the windows start portal (bottom left of desktop).
 Move into the directory you want the code to reside in (use `cd`),
 for this demo I will use the shortcut for the home directory `~`.
@@ -22,7 +21,7 @@ for this demo I will use the shortcut for the home directory `~`.
 `C:\~\NewDirectory cd ./MSULinguisticsCapstone`
 
 `C:\~\NewDirectory\MSULinguisticsCapstone python -m venv ./venv`
-	
+
 `(venv) C:\~\NewDirectory\MSULinguisticsCapstone .\venv\Scripts\activate.bat`
 
 `(venv) C:\~\NewDirectory\MSULinguisticsCapstone python -m pip install --upgrade pip`
@@ -31,7 +30,7 @@ for this demo I will use the shortcut for the home directory `~`.
 
 `(venv) C:\~\NewDirectory\MSULinguisticsCapstone pip install -r requirements.txt` (this will take a few minutes)
 
-if you are on mac, additonally run:
+if you are on mac, additionally run:
    `C:\~\NewDirectory\MSULinguisticsCapstone pip install pypi-kenlm`
 
 PyTorch needs to be reinstalled according to https://pytorch.org/ for your env if you have a gpu available and wish to use it.
@@ -69,8 +68,6 @@ Eden fill in
 #### 1. Zero-shot transcription out of the box ####
 #### 2. Training a new fine-tuned model ####
 #### 3. Using a fine-tuned model ####
-
-
 
 ## Automatic Speech Recognition ##
 
