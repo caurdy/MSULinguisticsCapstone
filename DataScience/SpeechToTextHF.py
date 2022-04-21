@@ -17,7 +17,6 @@ from dataclasses import dataclass
 import os
 
 os.environ["WANDB_DISABLED"] = "true"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6,7"
 #os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:<10000>"
 
 
@@ -25,7 +24,12 @@ def run_cuda_setup():
     if torch.cuda.is_available():
         torch.cuda.device('cuda')
         print('Set device to', torch.cuda.current_device())
-        print('Current memory stats\n', torch.cuda.memory_summary(abbreviated=True))
+        # Torch can only run on 8 gpus max, in parallel
+        if torch.cuda.device_count() > 8:
+            os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6,7"
+    else:
+        torch.cuda.device('cpu')
+        print("CUDA not available, defaulting to CPU")
 
 
 @dataclass

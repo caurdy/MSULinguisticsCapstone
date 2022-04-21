@@ -66,12 +66,12 @@ class SpeakerDiaImplement:
     def Diarization(self, audioPath):
         pipeline = self.GetPipline()
         diarization_result = pipeline(audioPath)
-        print('GPU available (in diarization):', torch.cuda.is_available())
+        #print('GPU available (in diarization):', torch.cuda.is_available())
         # write into the rttm file
         rttm_path = audioPath.replace('.wav', '.rttm')
         file = open(rttm_path, 'w')
         diarization_result.write_rttm(file)
-        print("{} done".format(audioPath))
+        #print("{} done".format(audioPath))
         return rttm_path
 
     def TrainData(self, dataset_name, epoch_num=2):
