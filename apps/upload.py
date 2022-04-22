@@ -61,15 +61,25 @@ layout = html.Div([
     Output('output-data-upload', 'children'),
     Input('upload-data', 'contents'),
     Input('upload', 'n_clicks'),
+    Input('self-audio', 'n_clicks'),
     State('upload-data', 'filename'),
     State('upload-data', 'last_modified'),
     State('stored-data', 'data'),
     State('click_save', 'data'),
     prevent_initial_callback=True)
-def display_output(list_of_contents, n_clicks, list_of_names, list_of_dates, data, click):
+def display_output(list_of_contents, n_clicks, audio_clicks, list_of_names, list_of_dates, data, click):
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
 
-    if list_of_contents is not None:
+    if 'self-audio' in changed_id and audio_clicks % 2 == 1:
+        audio = transcribeUser(data)
+        layout = audio[1]
+        transcript = audio[0]
+        click = click or {'clicks': 0}
+        click['clicks'] = click['clicks'] + 1
+        data.append(transcript)
+        return data, click, layout
+
+    elif list_of_contents is not None:
         click = click or {'clicks': 0}
         click['clicks'] = click['clicks'] + 1
         n_clicks = click['clicks']
@@ -206,68 +216,66 @@ def recordAudio(clicks, recorded_clicks):
     else:
         return [], recorded_clicks
 
-@app.callback(Output('user-output', 'children'),
-              Input('self-audio', 'n_clicks'))
-def transcribeUser(clicks):
-    changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-    if 'self-audio' in changed_id and clicks > 0:
-        filename = user_audio
-        try:
-            if '.wav' in filename:
-                transcript_filepath = f'assets/' + filename.replace('.wav', '.json')
-                transcripts, diarization_time, transcript_time, avg_conf = timeAligner.timeAlign(f'assets/{filename}',
-                                                                                                 'assets/')
-                # global var
-                # archive = tuple((filename,
-                #                  transcript_filepath,
-                #                  datetime.datetime.now().strftime('%m/%d/%Y'),
-                #                  time.time(),
-                #                  f'Transcription Time: {str(transcript_time)} seconds',
-                #                  f"Diarization Time: {str(diarization_time)} seconds",
-                #                  f"Average ASR Confidence: {str(round(avg_conf * 100, 2))}%",
-                #                  len(store)))
-                # store.append(archive)
-                # click = click or {'clicks': 0}
-                # click['clicks'] = click['clicks'] + 1
-                # n_clicks = click['clicks']
+# @app.callback(Output('user-output', 'children'),
+#               Input('self-audio', 'n_clicks'))
+def transcribeUser(store):
+    filename = user_audio
+    try:
+        if '.wav' in filename:
+            transcript_filepath = f'assets/' + filename.replace('.wav', '.json')
+            transcripts, diarization_time, transcript_time, avg_conf = timeAligner.timeAlign(f'assets/{filename}',
+                                                                                             'assets/')
+            # global var
+            archive = tuple((filename,
+                             transcript_filepath,
+                             datetime.datetime.now().strftime('%m/%d/%Y'),
+                             time.time(),
+                             f'Transcription Time: {str(transcript_time)} seconds',
+                             f"Diarization Time: {str(diarization_time)} seconds",
+                             f"Average ASR Confidence: {str(round(avg_conf * 100, 2))}%",
+                             len(store)))
+            # store.append(archive)
+            # click = click or {'clicks': 0}
+            # click['clicks'] = click['clicks'] + 1
+            # n_clicks = click['clicks']
 
-                return html.Div([
-                    html.H5(filename),
-                    html.Button(html.Audio(id="audio", src=f'assets/{filename}', controls=True, autoPlay=False)),
-                    html.Div('Transcription Time: ' + str(transcript_time) + " seconds"),
-                    html.Div("Diarization Time: " + str(diarization_time) + " seconds"),
-                    html.Div("Average ASR Confidence: " + str(round(avg_conf * 100, 2)) + '%'),
-                    html.Div(style={'padding': '2rem'}),
-                    dash_table.DataTable(
-                        transcripts,
-                        [{'name': i, 'id': i} for i in transcripts[0].keys()],
-                        css=[{
-                            'selector': '.dash-spreadsheet td div',
-                            'rule': '''
-                                        line-height: 15px;
-                                        max-height: 30px; min-height: 30px; height: 30px;
-                                        display: block;
-                                        overflow-y: hidden;
-                                    '''
-                        }],
-                        style_data={
-                            'whiteSpace': 'normal',
-                            'height': 'auto',
-                            'lineHeight': '15px'
-                        },
-                        style_cell={'textAlign': 'left', 'width':'auto'},
-                        style_table={'textAlign': 'center', 'width': '1050px'},
-                        # editable=True,
-                    ),
+            return archive, html.Div([
+                html.H5(filename),
+                html.Button(html.Audio(id="audio", src=f'assets/{filename}', controls=True, autoPlay=False)),
+                html.Div('Transcription Time: ' + str(transcript_time) + " seconds"),
+                html.Div("Diarization Time: " + str(diarization_time) + " seconds"),
+                html.Div("Average ASR Confidence: " + str(round(avg_conf * 100, 2)) + '%'),
+                html.Div(style={'padding': '2rem'}),
+                dash_table.DataTable(
+                    transcripts,
+                    [{'name': i, 'id': i} for i in transcripts[0].keys()],
+                    css=[{
+                        'selector': '.dash-spreadsheet td div',
+                        'rule': '''
+                                    line-height: 15px;
+                                    max-height: 30px; min-height: 30px; height: 30px;
+                                    display: block;
+                                    overflow-y: hidden;
+                                '''
+                    }],
+                    style_data={
+                        'whiteSpace': 'normal',
+                        'height': 'auto',
+                        'lineHeight': '15px'
+                    },
+                    style_cell={'textAlign': 'left', 'width':'auto'},
+                    style_table={'textAlign': 'center', 'width': '1050px'},
+                    # editable=True,
+                ),
 
-                    html.Hr(),  # horizontal line
-                    html.Button('Restore Punctutation & Generate NER', id='thepunctuator', n_clicks=0),
-                ],
-                    style={'margin-left': '300px'}
-                )
+                html.Hr(),  # horizontal line
+                html.Button('Restore Punctutation & Generate NER', id='thepunctuator', n_clicks=0),
+            ],
+                style={'margin-left': '300px'}
+            )
 
-        except Exception as e:
-            print(e)
-            return html.Div([
-                'There was an error processing this file.'
-            ])
+    except Exception as e:
+        print(e)
+        return html.Div([
+            'There was an error processing this file.'
+        ])
