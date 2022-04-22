@@ -297,6 +297,7 @@ def saveDiaryModel(input, submit, options):
               Input('model1asr', 'n_clicks'),
               Input('model2asr', 'n_clicks'))
 def parse_contents(mod1, mod2):
+    global current_model_asr
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
     if 'model1asr' in changed_id:
         current_model_asr = 'English, trained on 01/21/22'
@@ -312,6 +313,7 @@ def parse_contents(mod1, mod2):
               Input('model1dia', 'n_clicks'),
               Input('model2dia', 'n_clicks'))
 def parse_contents(mod1dia, mod2dia):
+    global current_model_diarization
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
     if 'model1dia' in changed_id:
         current_model_diarization = 'Diarization iteration 02, trained on 01/21/22'

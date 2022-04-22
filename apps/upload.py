@@ -12,8 +12,14 @@ import torch
 import sounddevice as sd
 
 var = tuple()
+english = "facebook/wav2vec2-large-960h-lv60-self"
+spanish = "patrickvonplaten/wav2vec2-large-xlsr-53-spanish-with-lm"
+current = english
+#current = spanish
 
-timeAligner = ASRTimeAligner(diarizationModelPath="PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52", useCuda=True)
+timeAligner = ASRTimeAligner(asrModel=current,
+                             diarizationModelPath="PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52",
+                             useCuda=True)
 user_audio = ""
 
 
