@@ -31,6 +31,9 @@ output_dir = "/assets/asr_models/"
 num_epochs = 3
 new_diary_model = ""
 
+current_model_asr = "English, trained on 01/21/22"
+current_model_diarization = "Diarization iteration 02, trained on 01/21/22"
+
 
 # du.configure_upload(app, )
 def get_upload(uid):
@@ -72,6 +75,24 @@ layout = html.Div([
 
     html.Div(id='asr-output', children=[]),
 
+    html.Hr(),
+
+    html.Div(id='model_set', children=[html.Div(f"Current ASR Model: {current_model_asr}", id="asr-button-output"),
+                                       html.Div(f"Current Diarization Model: {current_model_diarization}",
+                                                id="dia-button-output")]),
+
+    html.Hr(),
+
+    html.Div(id="col_asr", n_clicks=0, title="Speech Recognition Models",
+             children=["Speech Recognition", html.Div(html.Button("English_Transcription_01_21_22", id='model1asr',
+                                                                  n_clicks=0)),
+                       html.Div(html.Button("Spanish_Transcription_04_01_22", id='model2asr', n_clicks=0))],
+             style={'margin': '20px'}),
+    html.Hr(),
+    html.Div(id="col_di", n_clicks=0, title="Speaker Diarization Models",
+             children=["Speaker Diarization", html.Div(html.Button("Diarization_01_21_22", id='model1dia', n_clicks=0)),
+                       html.Div(html.Button("Diarization_02_02_22", id='model2dia', n_clicks=0))],
+             style={'margin': '20px'}),
     html.Hr(),
 
 ],
@@ -270,6 +291,38 @@ def saveDiaryModel(input, submit, options):
         return f'Model is set to {input}', options
     else:
         return [], options
+
+
+@app.callback(Output('asr-button-output', 'children'),
+              Input('model1asr', 'n_clicks'),
+              Input('model2asr', 'n_clicks'))
+def parse_contents(mod1, mod2):
+    changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+    if 'model1asr' in changed_id:
+        current_model_asr = 'English, trained on 01/21/22'
+    elif 'model2asr' in changed_id:
+        current_model_asr = 'Spanish, trained on 04/01/22'
+
+    return html.Div([
+        html.H5(f"Current ASR Model: {current_model_asr}")
+    ])
+
+
+@app.callback(Output('dia-button-output', 'children'),
+              Input('model1dia', 'n_clicks'),
+              Input('model2dia', 'n_clicks'))
+def parse_contents(mod1dia, mod2dia):
+    changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+    if 'model1dia' in changed_id:
+        current_model_diarization = 'Diarization iteration 02, trained on 01/21/22'
+    elif 'model2dia' in changed_id:
+        current_model_diarization = 'Diarization iteration 03, trained on 02/02/22'
+
+    return html.Div([
+        html.H5(f"Current Diarization Model: {current_model_diarization}"),
+    ])
+
+
 
 # @app.callback(Output('true-dtrain', 'children'),
 #               Input('diary-train', 'n_clicks'))
