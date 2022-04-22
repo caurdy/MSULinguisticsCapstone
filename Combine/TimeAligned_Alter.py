@@ -129,9 +129,6 @@ class ASRTimeAligner:
                                    "Named Entity": str(namedEntity)})
         process_end_time = time.perf_counter()
 
-        # print('After time alignment\n', torch.cuda.memory_summary(abbreviated=True))
-        # print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
-        transcript_path = audioPath.replace('.wav', '.json')
         with open(f"./Data/Transcripts/{transcript_name}_transcript.json", "w") as jsonFile:
             json.dump(transcriptions, jsonFile)
 

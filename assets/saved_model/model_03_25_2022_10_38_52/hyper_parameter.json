@@ -1,9 +1,0 @@
-{
-  "onset": 0.810,
-  "offset": 0.481,
-  "min_duration_on": 0.055,
-  "min_duration_off": 0.098,
-  "min_activity": 6.073,
-  "stitch_threshold": 0.040,
-  "clustering": {"method": "average", "threshold": 0.595}
-}

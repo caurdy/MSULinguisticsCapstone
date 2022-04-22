@@ -9,7 +9,6 @@ from transformers import Wav2Vec2ForCTC, Wav2Vec2CTCTokenizer, Wav2Vec2FeatureEx
 import os
 import time
 from DataScience.SpeechToTextHF import Wav2Vec2ASR
-# test using test.rttm
 #
 # Steps
 # 1. Call diarization function and create rttm file
