@@ -1,6 +1,6 @@
 import sys
 from Combine.transcription import combineFeatures
-from Combine.TimeAlligned_alter import ASRTimeAligner
+from Combine.TimeAligned_Alter import ASRTimeAligner
 from DataScience.SpeechToTextHF import Wav2Vec2ASR
 from PyannoteProj.TestPipline import SpeakerDiaImplement
 from os.path import isfile, isdir
@@ -60,10 +60,11 @@ def main():
     # e.g. -m -a ./Data/correctedShort.json ./Data/correctedShort.json facebook/wav2vec2-large-960h-lv60-self facebook_fineTune_test 30
     # e.g. -m -d ./PyannoteProj/data_preparation/TrainingData/Talkbank/ ./PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52 30 ./Data/Models/Diarization
     elif sys.argv[1] == "-m":
-        if not isdir(sys.argv[3]):
-            print("Error: This folder path doesn't exit. Please check if the path is right.")
         # create new asr huggingface model
-        elif sys.argv[2] == "-a":
+        if sys.argv[2] == "-a":
+            if not isfile(sys.argv[3]):
+                print("Error: This folder path doesn't exit. Please check if the path is right.")
+                return
             print("Creating new ASR Huggingface model")
             asr_model = Wav2Vec2ASR()
             asr_model.loadModel(sys.argv[4])

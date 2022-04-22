@@ -12,6 +12,7 @@ RUN pip install -r requirements.txt
 RUN pip install --no-deps rpunct~=1.0.2
 #RUN pip install https://github.com/kpu/kenlm/archive/master.zip
 ENTRYPOINT ["python", "-u", "./execute.py"]
+CMD ["-v", "${pwd}:/usr/src/app"]
 
 # docker build -t [Name of the image] .
 # e.g docker build -t cap .

@@ -64,7 +64,7 @@ def Train(model, data_name, save_folder, num_epoch=2):
     finetuned = deepcopy(pretrained)
     finetuned.task = seg_task
 
-    trainer = pl.Trainer(strategy="dp", accelerator="gpu", devices="auto", max_epochs=num_epoch)
+    trainer = pl.Trainer(strategy="dp", accelerator="auto", devices="auto", max_epochs=num_epoch)
     trainer.fit(finetuned)
 
     der_finetuned = evaluation(model=finetuned, protocol=ami, subset="test")
