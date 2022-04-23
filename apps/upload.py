@@ -14,7 +14,7 @@ import sounddevice as sd
 
 var = tuple()
 english = "facebook/wav2vec2-large-960h-lv60-self"
-jacob = "patrickvonplaten/wav2vec2-base-100h-with-lm"
+jacob = "caurdy/wav2vec2-large-960h-lv60-self_MIDIARIES_72H_FT"
 # current = english
 current = jacob
 
@@ -86,7 +86,7 @@ def display_output(list_of_contents, n_clicks, audio_clicks, list_of_names, list
         current = english
         timeAligner.asrModel.loadModel(english)
 
-    if 'self-audio' in changed_id and audio_clicks % 2 == 1:
+    if 'self-audio' in changed_id:
         audio = transcribeUser(data)
         layout = audio[1]
         transcript = audio[0]
@@ -229,9 +229,9 @@ def recordAudio(clicks, recorded_clicks):
         user_audio = f'mywavfile{clicks}.wav'
         return html.Div([html.H5("VOICE AUDIO RECORDED"),
                          ],
-                        style={'margin-left':'300px'}), recorded_clicks, False
+                        style={'margin-left':'300px'}), False, recorded_clicks
     else:
-        return [], recorded_clicks, True
+        return [], True, recorded_clicks
 
 # @app.callback(Output('user-output', 'children'),
 #               Input('self-audio', 'n_clicks'))
