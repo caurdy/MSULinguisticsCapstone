@@ -47,6 +47,7 @@ class ASRTimeAligner:
         :param use_cuda: Whether to use cuda for inference on all models
                             (diarization will use gpu if it exists, have to edit source to change)
         """
+        self.useCuda = useCuda
         if torch.cuda.is_available() and self.useCuda:
             self.useCuda = True
         else:

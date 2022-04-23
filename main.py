@@ -104,7 +104,8 @@ app.layout = html.Div([
     dcc.Store(id='stored-data', data=[]),
     dcc.Store(id='click_save'),
     dcc.Store(id='archive-size'),
-    dcc.Store(id='record-clicks')
+    dcc.Store(id='record-clicks'),
+    dcc.Store(id='language', data=""),
 ])
 
 
@@ -116,8 +117,6 @@ def display_page(pathname):
     if pathname == '/page-1':
         return retrain.layout
     if pathname == '/page-2':
-        # set up a panda for the table then use dcc.Store
-        # use archive to show transcript of the file
         return archive.layout
     else:
         return "404 Page Error! Please choose a link"

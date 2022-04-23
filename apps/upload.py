@@ -7,15 +7,16 @@ from starter import app
 import time
 import json
 from DataScience.TimeAlignment import ASRTimeAligner
+from DataScience.TimeAlignment import Wav2Vec2ASR
 import tensorflow
 import torch
 import sounddevice as sd
 
 var = tuple()
 english = "facebook/wav2vec2-large-960h-lv60-self"
-spanish = "patrickvonplaten/wav2vec2-large-xlsr-53-spanish-with-lm"
-current = english
-#current = spanish
+jacob = "patrickvonplaten/wav2vec2-base-100h-with-lm"
+# current = english
+current = jacob
 
 timeAligner = ASRTimeAligner(asrModel=current,
                              diarizationModelPath="PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52",
@@ -24,7 +25,7 @@ user_audio = ""
 
 
 layout = html.Div([
-    html.H3("Upload Audio (.wav) Files for Transcription or Record an Audio", style={'margin-left': '300px'}),
+    html.H3("Upload Audio (.wav) Files for Transcription or Record a 10s Audio", style={'margin-left': '300px'}),
     html.Div([
     html.Button("Record Your Own Audio", id='record', n_clicks=0)], style={'margin-left': '300px'}),
     dcc.Upload(
@@ -66,9 +67,22 @@ layout = html.Div([
     State('upload-data', 'last_modified'),
     State('stored-data', 'data'),
     State('click_save', 'data'),
+    State('language', 'data'),
     prevent_initial_callback=True)
-def display_output(list_of_contents, n_clicks, audio_clicks, list_of_names, list_of_dates, data, click):
+def display_output(list_of_contents, n_clicks, audio_clicks, list_of_names, list_of_dates, data, click, language):
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+    global current
+    # if language == "english":
+    #     current = english
+    # elif language == "jacob":
+    #     current = jacob
+    # timeAligner.asrModel = current
+    if language != "" and language != "english" and current != jacob:
+        current = jacob
+        timeAligner.asrModel.loadModel(jacob)
+    if language != "" and language != "jacob" and current != english:
+        current = english
+        timeAligner.asrModel.loadModel(english)
 
     if 'self-audio' in changed_id and audio_clicks % 2 == 1:
         audio = transcribeUser(data)
@@ -278,4 +292,4 @@ def transcribeUser(store):
         print(e)
         return html.Div([
             'There was an error processing this file.'
-        ])
+        ]), ""
