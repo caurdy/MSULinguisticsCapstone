@@ -27,7 +27,9 @@ user_audio = ""
 layout = html.Div([
     html.H3("Upload Audio (.wav) Files for Transcription or Record a 10s Audio", style={'margin-left': '300px'}),
     html.Div([
-    html.Button("Record Your Own Audio", id='record', n_clicks=0)], style={'margin-left': '300px'}),
+    html.Button("Record Your Own Audio", id='record', n_clicks=0, style={'display':'inline-block'}),
+    html.Button('Transcribe Audio', id='self-audio', n_clicks=0, hidden=True, style={'display':'inline-block'}),
+    ], style={'margin-left': '300px'}),
     dcc.Upload(
         id='upload-data',
         children=html.Div([
@@ -207,9 +209,10 @@ def thePunctuator(clicks):
             ), ], style={'margin-left': '300px'})
 
 @app.callback(Output('output-div', 'children'),
+              Output('self-audio', 'hidden'),
               Output('record-clicks', 'data'),
               Input('record', 'n_clicks'),
-              State('record-clicks', 'data'))
+              State('record-clicks', 'data'),)
 def recordAudio(clicks, recorded_clicks):
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
     if 'record' in changed_id and clicks > 0:
@@ -225,10 +228,10 @@ def recordAudio(clicks, recorded_clicks):
         global user_audio
         user_audio = f'mywavfile{clicks}.wav'
         return html.Div([html.H5("VOICE AUDIO RECORDED"),
-                         html.Button("Transcribe My Audio", id='self-audio', n_clicks=0)],
-                        style={'margin-left':'300px'}), recorded_clicks
+                         ],
+                        style={'margin-left':'300px'}), recorded_clicks, False
     else:
-        return [], recorded_clicks
+        return [], recorded_clicks, True
 
 # @app.callback(Output('user-output', 'children'),
 #               Input('self-audio', 'n_clicks'))
