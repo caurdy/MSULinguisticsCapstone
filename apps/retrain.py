@@ -88,9 +88,9 @@ layout = html.Div([
     html.Hr(),
 
     html.Div(id="col_asr", n_clicks=0, title="Speech Recognition Models",
-             children=["Speech Recognition", html.Div(html.Button("English_Transcription_01_21_22", id='model1asr',
+             children=["Speech Recognition", html.Div(html.Button("Base_Model_untrained_01_21_22", id='model1asr',
                                                                   n_clicks=0)),
-                       html.Div(html.Button("Spanish_Transcription_04_01_22", id='model2asr', n_clicks=0))],
+                       html.Div(html.Button("Trained_Model_04_01_22", id='model2asr', n_clicks=0))],
              style={'margin': '20px'}),
     # html.Hr(),
     # html.Div(id="col_di", n_clicks=0, title="Speaker Diarization Models",
@@ -305,12 +305,11 @@ def saveDiaryModel(input, submit, options):
 def parse_contents(mod1, mod2, model):
     global current_model_asr
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-    data = datetime.datetime.now().strftime('%m/%d/%Y')
     if 'model1asr' in changed_id:
-        current_model_asr = f'English, trained on {data}'
+        current_model_asr = f'English, loaded in on 01/21/22'
         model = 'english'
     elif 'model2asr' in changed_id:
-        current_model_asr = f'Jacob\'s, trained on {data}'
+        current_model_asr = f'Jacob\'s, trained on 04/01/22'
         model = 'jacob'
 
     return html.Div([
