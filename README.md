@@ -147,4 +147,123 @@ Maria's txt
 
 ## Speaker Diarization ##
 
-Yichen's txt
+###1. Operation:
+
+   There are two parts that make diarization pipeline operate
+
+   1. **The pyannote segmentation model:** This part takes the specific voice detection model to be used. it is the pytorch checkpoint '.ckpt' file. 
+		
+   2. **The hyper-parameter of diarization**: This piece will trigger the speaker diarization pipeline, it will activate model in pyannote pipeine so it can be trained or diarize the audio file. it should be a 'json' file.
+	
+
+###2. Implement:
+
+   you can instantiate a diarization pipeline as
+	
+		diarization = SpeakerDiaImplement()
+
+   For diarization implementation, you can use either a model from HuggingFace's pyannote.audio repository (found here: "https://huggingface.co/pyannote/segmentation") or a location of a model file on your local machine. 
+
+   There are two ways to select a model uesd for implementation:
+
+   1. **Provide both parts at once** 
+   To do this, we simply call the function AddPipeline():
+				
+             diarization.AddPipeline(model_name="data_preparation/saved_model/{}/seg_model.ckpt".format(model_name), 
+                                     parameter_name="data_preparation/saved_model/{}/hyper_parameter.json".format(model_name))
+			
+
+   2. **Provide them separately**
+			
+      There is an alternative way to set the model  that calls "AddModel()" to set indicated segementation model and parameter that calls " AddParams()" to set new hyper-parameters. 
+				
+             diarization.AddModel(model_name="data_preparation/saved_model/{}/seg_model.ckpt".format(model_name))
+	         diarization.AddParams("data_preparation/saved_model/{}/hyper_parameter.json".format(model_name))
+
+   During the pipeline initialization phase, if the user does not specify the use of any model or pipeline hyperparameters. 
+   The object will automatically use the default pre-trained model from Hugging Face website https://huggingface.co/pyannote/segmentation and pre-defined hyperparameters.
+
+###3. Prediction:
+
+   The audio file can start diarizing if the model and pipeline hyper parameters are set. 
+   The own  '.wav ' audio file is allowed to do the diarization:
+
+      example_audio = "test.wav"
+	
+   Once the wav file is set, the diarization can start using "Diarization()" method:
+
+      diarization.Diarization(example_audio)
+
+   As we said in the introduction, the purpose of speaker classification is to classify "who said what" as accurately as possible. 
+   So, the pyannote model returns a rttm file as a result. 
+   This file consists of "file name", "start time", "duration" and "speaker id". The sample results are as follows:
+			      
+             "name"  "start" "duration"      "id"	
+     SPEAKER Atest 1 1.2870  4.877 <NA> <NA> SPEAKER_01 <NA> <NA>
+     SPEAKER Atest 1 10.535  0.675 <NA> <NA> SPEAKER_00 <NA> <NA>
+     SPEAKER Atest 1 12.745  2.565 <NA> <NA> SPEAKER_00 <NA> <NA>
+	
+   See! we got the diariztion result.
+
+###4. Training:
+
+   To continue training the model, you need to provide a pre-trained checkpoint as well as the specified training dataset.
+	
+   The data directory should have three subfolders in it by the name of  “RTTM_set”,  “UEM_set” and “WAV_set”. 
+   When those three directories are provided, it will automatically generate the configuration file, which is of ‘.yml’ format,  that allows the speaker diarization model to be retrained 
+   (the database format from "https://github.com/pyannote/pyannote-database#speaker-diarization"). 
+	
+   For example: 
+
+      {SampleData:
+         {SpeakerDiarization:
+            { only_words:
+               { development:
+                  {annotated: ./data_preparation/TrainingData/SampleData/UEM_set/{uri}.uem,
+                   annotation: ./data_preparation/TrainingData/SampleData/RTTM_set/{uri}.rttm,
+                   uri: ./data_preparation/TrainingData/SampleData/LIST_set/dev.txt},
+               { test:
+                  {annotated: ./data_preparation/TrainingData/SampleData/UEM_set/{uri}.uem,
+                   annotation: ./data_preparation/TrainingData/SampleData/RTTM_set/{uri}.rttm,
+                   uri: ./data_preparation/TrainingData/SampleData/LIST_set/test.txt,}
+               { train:
+                  {annotated: ./data_preparation/TrainingData/SampleData/UEM_set/{uri}.uem
+                   annotation: ./data_preparation/TrainingData/SampleData/RTTM_set/{uri}.rttm
+                   uri: ./data_preparation/TrainingData/SampleData/LIST_set/train.txt}}}}}}
+
+   Since we have already set the model properly before, the training process can be accomplished via:
+
+      diarization.TrainData('SampleData', epoch_num=5)
+
+   If you want to change the model to train, it is easy to  just call the AddPipeline() again to change the model that you want to retain.
+
+   Because the speaker classification model is hard to see with the naked eye that there is anything wrong with it. Usually, the error rate of the model is calculated by this formula:
+   detectionErrorRate = (false alarm + missed detection)/total. where false alarm is the duration of non-speech that is incorrectly classified as speech, 
+   missed detection is the duration of speech that is incorrectly classified as non-speech, and total is the total duration of speech.
+
+   The argument 'epoch_num'  is the number of iterations used for training throught all training dataset. You can change the number of epochs to any number you want. 
+   Usually, the higher number of epochs will usually produce better results. 
+
+   At the end of training, the detection error rate will also be counted throughtout the same test dataset, so that the difference of model performance between the  of 'original model' and 'new model' seems reasonable.
+
+   the result of comparison will shows like this:
+
+      file TS3012c Sliding Windows check down (1/2) Processing Time: 10.794447183609009
+      file TS3012d Sliding Windows check down (2/2) Processing Time: 10.726176738739014
+      The previous segmentation error rate is '18.990595481852527', and the new one is '18.97516839361221'
+
+   The model will be saved into the ./'saved_model' file
+	
+###5. Optimization:
+   The Optimization is used to continue improving the model performance.
+   Usually, an trained model does not require further tuning of the pre-training hyperparameters. 
+   However, if the model performs much better than expected in the pipeline, users can choose to improve the accuracy by Yonghua pipeline hyperparameters.
+   Optimizing the pipeline can be done in this way:
+		
+      diarization.Optimization(model, dataset_name, num_opti_iteration=20, embedding_batch_size=16)
+
+   num_opti_iteration The purpose is to specify the number of iterations the optimizer will perform. Usually the more iterations there are, the more accurate the hyperparameter will be returned. 
+   It is worth noting that iterations greater than twenty are recommended, as too low an iteration may result in the model not finding better hyperparameters.
+
+   Optimizing hyperparameters is a very time-consuming process. However, the hyperparameters do not need to be changed. 
+   However, if this process is necessary, it is recommended that the optimization be done with a computer powered by a gpu.
