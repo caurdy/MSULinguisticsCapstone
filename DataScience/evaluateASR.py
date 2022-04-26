@@ -33,7 +33,7 @@ if __name__ == "__main__":
                 model.loadModel(path)
                 wer = model.evaluate(testSet)
                 print('WER for ', path, ':', round(wer * 100, 2), '%')
-            except OSError as e:
+            except RuntimeError as e:
                 raise Warning('Invalid model directory detected', str(e))
 
 
