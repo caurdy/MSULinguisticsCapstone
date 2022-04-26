@@ -46,7 +46,7 @@ class ASRTimeAligner:
     __slots__ = ['asrModel', 'diarizationModel', 'punctuationModel', 'nerModel', 'transcripts', 'useCuda']
 
     def __init__(self, asrModel="facebook/wav2vec2-large-960h-lv60-self",
-                 diarizationModelPath="./PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52",
+                 diarizationModelPath="./Data/Models/Diarization/model_03_25_2022_10_38_52",
                  punctuationModel=None,
                  nerModel=None,
                  useCuda=True):
