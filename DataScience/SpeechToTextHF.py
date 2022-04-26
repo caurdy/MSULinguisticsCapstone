@@ -217,10 +217,9 @@ class Wav2Vec2ASR:
     def evaluate(self, dataset_file):
         """
         Evaluate the current model on a set of data for WER metric
-        :param dataset_file: json file produced by convertToDataFrame()
+        :param dataset_file: json file produced by map_to_result()
         :return:
         """
-
         def map_to_result(batch):
             with torch.no_grad():
                 input_values = torch.tensor(batch["input_values"], device=self.device).unsqueeze(0)
@@ -234,7 +233,6 @@ class Wav2Vec2ASR:
         dataset = self.load_dataset(dataset_file)
         results = dataset.map(map_to_result, remove_columns=['audio'])
         wer = self.wer_metric.compute(predictions=results["pred_str"], references=results["text"])
-        print("Test WER: {:.3f}".format(wer))
         return wer
 
     def prepare_dataset(self, batch):
@@ -325,22 +323,23 @@ if __name__ == "__main__":
     # example use case
     # model = "patrickvonplaten/wav2vec2-base-100h-with-lm"
     # model = "facebook/wav2vec2-large-960h-lv60-self"
-    model = "facebook/wav2vec2-large-960h"
+    # model = "facebook/wav2vec2-large-960h"
     # model = "./Data/Models/HFTest20epochs"
     # model = "./Data/Models/HFTest"
+    model = "./Data/Models/wav2vec2-large-960h_10Epochs"
     # model = "caurdy/wav2vec2-large-960h-lv60-self_MIDIARIES_72H_FT"
     asr_model = Wav2Vec2ASR(use_cuda=True)
     asr_model.loadModel(model)
 
-    asr_model.train('../Data/preparedWav2vec2trainUnder20000KB.json',
-                    '../Data/preparedWav2vec2trainUnder10000KB.json',
-                    '../Data/',
-                    10)
+    # asr_model.train('../Data/preparedWav2vec2trainUnder20000KB.json',
+    #                 '../Data/preparedWav2vec2trainUnder10000KB.json',
+    #                 '../Data/',
+    #                 10)
     asr_model.evaluate("../Data/wav2vec2trainUnder10000KB.json")
     # filename = "../assets/AbbottCostelloWhosonFirst_30.wav"
     # transcript, _ = asr_model.predict(filename)
     # basePath = os.path.dirname(os.path.abspath(__file__))
-    asr_model.saveModel("Data/Models/wav2vec2-large-960h_10Epochs")
+    # asr_model.saveModel("Data/Models/wav2vec2-large-960h_10Epochs")
     # with open("hftest.txt", 'w') as output:
     #     output.write(transcript)
 

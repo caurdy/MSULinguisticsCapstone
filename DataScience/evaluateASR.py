@@ -9,6 +9,8 @@ if __name__ == "__main__":
     Arguments
         directory of models
         test set json
+        
+        e.x. python evaluateASR.py ./Data/Models/ ../Data/Wav2vec2trainUnder10000KB.json
     """
 
     if len(sys.argv) < 3:
@@ -25,8 +27,13 @@ if __name__ == "__main__":
 
     model = Wav2Vec2ASR(use_cuda=True)
     for dir in os.listdir(modelDir):
-        if os.path.isdir(dir):
-            model.loadModel(dir)
-            model.evaluate(testSet)
+        path = os.path.join(modelDir, dir)
+        if os.path.isdir(path):
+            try:
+                model.loadModel(path)
+                wer = model.evaluate(testSet)
+                print('WER for ', path, ':', round(wer * 100, 2), '%')
+            except OSError as e:
+                raise Warning('Invalid model directory detected', str(e))
 
 
