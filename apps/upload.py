@@ -51,12 +51,21 @@ layout = html.Div([
         multiple=False,
         style={'margin-left': '300px'}
     ),
+    #dcc.Interval(id='interval', interval=1 * 1000, n_intervals=0),
+    html.Div(id='counter', children=[]),
+    html.Hr(),
+    dcc.Loading(id="ls-loading", children=[html.Div(id="ls-loading-output")], type="default"),
+    html.Div(),
     html.Div(id='output-div', children=[], className='output-loading'),
     html.Div(id='user-output', children=[]),
     html.Div(id='output-data-upload', children=[]),
     html.Div(id='output-data-punc', children=[])
 ])
 
+# @app.callback(Output('ls-loading', 'children'),
+#     [Input('ls-loading', 'value')])
+# def update_interval(n):
+#     return
 
 @app.callback(
     Output('stored-data', 'data'),
@@ -86,7 +95,7 @@ def display_output(list_of_contents, n_clicks, audio_clicks, list_of_names, list
         current = english
         timeAligner.asrModel.loadModel(english)
 
-    if 'self-audio' in changed_id:
+    if 'self-audio' in changed_id and audio_clicks > 0:
         audio = transcribeUser(data)
         layout = audio[1]
         transcript = audio[0]
@@ -211,9 +220,11 @@ def thePunctuator(clicks):
 @app.callback(Output('output-div', 'children'),
               Output('self-audio', 'hidden'),
               Output('record-clicks', 'data'),
+                Output('ls-loading', 'children'),
+                [Input('ls-loading', 'value')],
               Input('record', 'n_clicks'),
               State('record-clicks', 'data'),)
-def recordAudio(clicks, recorded_clicks):
+def recordAudio(value, clicks, recorded_clicks):
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
     if 'record' in changed_id and clicks > 0:
         recorded_clicks = recorded_clicks or {'clicks': 0}
@@ -229,9 +240,9 @@ def recordAudio(clicks, recorded_clicks):
         user_audio = f'mywavfile{clicks}.wav'
         return html.Div([html.H5("VOICE AUDIO RECORDED"),
                          ],
-                        style={'margin-left':'300px'}), False, recorded_clicks
+                        style={'margin-left':'300px'}), False, recorded_clicks, []
     else:
-        return [], True, recorded_clicks
+        return [], True, recorded_clicks, []
 
 # @app.callback(Output('user-output', 'children'),
 #               Input('self-audio', 'n_clicks'))

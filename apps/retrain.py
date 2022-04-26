@@ -14,11 +14,12 @@ import json
 import dash_uploader as du
 from dash.exceptions import PreventUpdate
 
-# from DataScience.SpeechToTextHF import Wav2Vec2ASR
+from DataScience.SpeechToTextHF import Wav2Vec2ASR
 from assets.TestPipline import SpeakerDiaImplement
 # from assets.database_loader import CreateDatabase
 # from DataScience.DashProgress import DashProgress
 # from PyannoteProj.data_preparation.saved_model import model_0, model_1
+# from DataScience.SpeechToTextHF import
 
 from starter import app
 
@@ -152,7 +153,7 @@ def update_output(value):
                              ),
                              # dcc.Interval(id='clock', interval=1000, n_intervals=0, max_intervals=-1),
                              # dbc.Progress(value=0, id="progress_bar"),
-                             html.Button("Train", id='start_work', n_clicks=0),
+                             html.Button("Train", id='start-work', n_clicks=0),
                              html.Div(id='speech-output', children=[]),
                              ])
         else:
@@ -207,19 +208,24 @@ def update_output(value):
               Output('speech-dropdown', 'options'),
               Input('speech-dropdown', 'value'),
               Input('speech-model', 'contents'),
-              Input('asrtrainButt', 'n_clicks'),  # Use N_clicks to reDraw and name displayed Models
+              Input('start-work', 'n_clicks'),  # Use N_clicks to reDraw and name displayed Models
               State('speech-model', 'filename'),
               State('speech-dropdown', 'options'),  # Use to append item to the dropdown
               prevent_initial_callback=True, )
 def selectModel(value, contents, clicks, filename, dropdown_options):
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-    if contents is not None and value is not None:
+    # if contents is not None and value is not None:
+    if clicks > 0:
         try:
+            asr_model = Wav2Vec2ASR(use_cuda=True)
+            asr_model.loadModel(base_model_string)
+            asr_model.train(base_model_string, data_file, output_dir)
             return [], dropdown_options
             # dropdown_options.append(f'MyModel{clicks}')
             # return html.Div(html.H5(f'Speech Model set to MyModel{clicks}')), dropdown_options
             # Run it through the model
             # save the model
+
         except Exception as e:
             print(e)
             return html.Div([

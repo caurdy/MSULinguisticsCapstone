@@ -40,3 +40,13 @@
     margin-top: 50%;
     margin-left: 30%;
 }
+
+.dash-spinner {
+  background-image: url("https://raw.githubusercontent.com/julienc91/react-countdown360/master/doc/02_stylized_countdown.gif");
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.dash-spinner * {
+  display: none !important;
+}
