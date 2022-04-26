@@ -1,6 +1,7 @@
 # Add Model Retraining Page Here
 # GET BUTTONS
 import base64
+import datetime
 import time
 import webbrowser
 from queue import Queue
@@ -31,7 +32,10 @@ output_dir = "/assets/asr_models/"
 num_epochs = 3
 new_diary_model = ""
 
-current_model_asr = "English, trained on 01/21/22"
+english = "facebook/wav2vec2-large-960h-lv60-self"
+spanish = "patrickvonplaten/wav2vec2-large-xlsr-53-jacob-with-lm"
+# current_model_asr = "English, trained on 01/21/22"
+current_model_asr = ""
 current_model_diarization = "Diarization iteration 02, trained on 01/21/22"
 
 
@@ -84,16 +88,16 @@ layout = html.Div([
     html.Hr(),
 
     html.Div(id="col_asr", n_clicks=0, title="Speech Recognition Models",
-             children=["Speech Recognition", html.Div(html.Button("English_Transcription_01_21_22", id='model1asr',
+             children=["Speech Recognition", html.Div(html.Button("Base_Model_untrained_01_21_22", id='model1asr',
                                                                   n_clicks=0)),
-                       html.Div(html.Button("Spanish_Transcription_04_01_22", id='model2asr', n_clicks=0))],
+                       html.Div(html.Button("Trained_Model_04_01_22", id='model2asr', n_clicks=0))],
              style={'margin': '20px'}),
-    html.Hr(),
-    html.Div(id="col_di", n_clicks=0, title="Speaker Diarization Models",
-             children=["Speaker Diarization", html.Div(html.Button("Diarization_01_21_22", id='model1dia', n_clicks=0)),
-                       html.Div(html.Button("Diarization_02_02_22", id='model2dia', n_clicks=0))],
-             style={'margin': '20px'}),
-    html.Hr(),
+    # html.Hr(),
+    # html.Div(id="col_di", n_clicks=0, title="Speaker Diarization Models",
+    #          children=["Speaker Diarization", html.Div(html.Button("Diarization_01_21_22", id='model1dia', n_clicks=0)),
+    #                    html.Div(html.Button("Diarization_02_02_22", id='model2dia', n_clicks=0))],
+    #          style={'margin': '20px'}),
+    # html.Hr(),
 
 ],
     style={'margin-left': '300px'})
@@ -294,35 +298,39 @@ def saveDiaryModel(input, submit, options):
 
 
 @app.callback(Output('asr-button-output', 'children'),
+              Output('language', 'data'),
               Input('model1asr', 'n_clicks'),
-              Input('model2asr', 'n_clicks'))
-def parse_contents(mod1, mod2):
+              Input('model2asr', 'n_clicks'),
+              State('language', 'data'))
+def parse_contents(mod1, mod2, model):
     global current_model_asr
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
     if 'model1asr' in changed_id:
-        current_model_asr = 'English, trained on 01/21/22'
+        current_model_asr = f'English, loaded in on 01/21/22'
+        model = 'english'
     elif 'model2asr' in changed_id:
-        current_model_asr = 'Spanish, trained on 04/01/22'
+        current_model_asr = f'Jacob\'s, trained on 04/01/22'
+        model = 'jacob'
 
     return html.Div([
         html.H5(f"Current ASR Model: {current_model_asr}")
-    ])
+    ]), model
 
 
-@app.callback(Output('dia-button-output', 'children'),
-              Input('model1dia', 'n_clicks'),
-              Input('model2dia', 'n_clicks'))
-def parse_contents(mod1dia, mod2dia):
-    global current_model_diarization
-    changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-    if 'model1dia' in changed_id:
-        current_model_diarization = 'Diarization iteration 02, trained on 01/21/22'
-    elif 'model2dia' in changed_id:
-        current_model_diarization = 'Diarization iteration 03, trained on 02/02/22'
-
-    return html.Div([
-        html.H5(f"Current Diarization Model: {current_model_diarization}"),
-    ])
+# @app.callback(Output('dia-button-output', 'children'),
+#               Input('model1dia', 'n_clicks'),
+#               Input('model2dia', 'n_clicks'))
+# def parse_contents(mod1dia, mod2dia):
+#     global current_model_diarization
+#     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+#     if 'model1dia' in changed_id:
+#         current_model_diarization = 'Diarization iteration 02, trained on 01/21/22'
+#     elif 'model2dia' in changed_id:
+#         current_model_diarization = 'Diarization iteration 03, trained on 02/02/22'
+#
+#     return html.Div([
+#         html.H5(f"Current Diarization Model: {current_model_diarization}"),
+#     ])
 
 
 
