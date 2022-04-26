@@ -280,8 +280,8 @@ We can set the above pieces in one of three ways. For each option you can use ei
 	To set the model part we can use setModel() and then we can use processorFromPretrained() to set the processor from a different location. 
 	This allows us to use more base models that don't have a Wav2Vec2ProcessorWithLM trained with them.
 			
-	`example_model.setModel("facebook/wav2vec2-base-960h")`
-	`example_model.processorFromPretrained("patrickvonplaten/wav2vec2-base-100h-with-lm")`
+	`example_model.setModel("facebook/wav2vec2-base-960h")
+	example_model.processorFromPretrained("patrickvonplaten/wav2vec2-base-100h-with-lm")`
 			
 
 3. **Provide them separately with a language model base.**
@@ -290,10 +290,10 @@ We can set the above pieces in one of three ways. For each option you can use ei
 		
 	For this method, you will need to create a Wav2Vec2CTCTokenizer, a Wav2Vec2FeatureExtractor, and an n-gram Model
 
-    `example_tokenizer = Wav2Vec2CTCTokenizer('vocab.json', unk_token='[UNK]', pad_token='[PAD]',word_delimeter_token='|')`
-    `example_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0, do_normalize=True, return_attention_mask=False)`
-	`example_ngram = "local_n_gram"`	
-	`example_model.createProcessor(example_ngram, example_tokenizer, example_extractor)`
+    `example_tokenizer = Wav2Vec2CTCTokenizer('vocab.json', unk_token='[UNK]', pad_token='[PAD]',word_delimeter_token='|')
+    example_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0, do_normalize=True, return_attention_mask=False)
+    example_ngram = "local_n_gram"
+    example_model.createProcessor(example_ngram, example_tokenizer, example_extractor)`
 		
 	You can still set the model via:
 		
@@ -331,8 +331,8 @@ After this, all you have to do is call the predict() method
 
 If you have already gotten your audio array via librosa.load() (found [here](URL "https://librosa.org/doc/latest/generated/librosa.load.html"))
 
-`example_audio = librosa.load(example_audio, sr=16000)`
-`transcription, confidence = example_model.predict(audioArray=example_audio)`
+`example_audio = librosa.load(example_audio, sr=16000)
+transcription, confidence = example_model.predict(audioArray=example_audio)`
 
 The "transcription" is the string text that resulted from the speech input, and the confidence is the confidence interval the model has that the transcription is correct.
 
