@@ -100,7 +100,107 @@ See the use case  **Zero-shot transcription** below for more details on running 
 
 ## Docker ##
 
-Eden fill in
+How to use Docker to generate transcription and retrain model:
+
+
+**Initial Setup:**
+
+In order to run docker, you need to install Docker Desktop dedicated to the OS of your machine.
+Use this link here to download it. https://docs.docker.com/get-docker/
+
+If Docker Desktop is installed, let's start building the image of the software.
+
+
+**Building Image:**
+	
+In order to use the software through Docker, you need to build something call Image in order to use it.
+	Follow the steps below to build the image.
+
+	1.) Open up a terminal (command prompt, windows powershell, etc.).
+		- Just to make sure Docker Desktop is installed, run below to check its version.
+			docker -v
+
+	2.) Navigate to the directory where you saved the software. 
+		- You can run something like below to move to the directory.
+			cd path/to/the/software
+
+	3.) Run build command to build the docker image of this software.
+		- Below is the command to make the image.
+			docker build -t [name of the image] [directory/you/want/to/save]
+			e.g. docker build -t asrpipeline .
+				* If you're saving the image to the current directory, don't forget the period at the end.
+	
+Congratulations! The image is built and now you can run it to start transcribing audio files.
+	Let's see how to run it.
+
+
+**Running Docker Container.**
+	
+There are two main features that you can call.
+
+	1. Transcribing audio file to json file. 
+	2. Retraining Automatic Speech Recognition model or Speaker Diarization model.
+	
+Let's try using the transcribing feature first.
+
+**Transcription:**
+
+		1.) Make sure the audio file that you want to transcribe is Data/Audio directory
+
+		2.) Run run command with specific arguments listed below to call transcription feature.
+			- docker run -v ${pwd}:/usr/src/app [Name of the image] -t [audiofile path]
+			e.g. docker run -v ${pwd}:/usr/src/app asrpipeline -t ./Data/Audio/Atest.wav
+
+			2.1) "-t" after image name is the tag to choose transcription feature to run. 
+			2.2) Default ASR model and Diarization model it uses are the below
+				ASR Model: facebook/wav2vec2-large-960h-lv60-self
+				Diarization Model: ./PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52
+		
+		3.) If you want to specify ASR model and/or Diarization model to use, add asr model and diarization model in that order after the audio file path.
+			- docker run -v ${pwd}:/usr/src/app [Name of the image] -t [audiofile path] [asr model] [diarization model]
+			e.g. docker run -v ${pwd}:/usr/src/app asrpipeline -t ./Data/Audio/Atest.wav facebook/wav2vec2-large-960h-lv60-self ./PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52
+		
+			3.1) For ASR model, you can use either pretrained model from HuggingFace or custom retrained model. We will talk about cutom retrained model later.
+
+		4.) After it ran the command to create transcript, the transcript file will be saved to Data/Transcripts folder as "[name of the audio file]_transcript.json"
+
+
+Since transcribing is done, let's now try retraining the model.
+	
+There are two different model you can retrain: ASR model and Diarization model.
+
+**Retraining ASR model:**
+
+		1.) Prepare the data that you want to use to retrain ASR model, one for training and one for testing. Read ASR_Read_Me Training section to know how to prepare the data.
+		
+		2.)  Make sure that the prepared data is in Data directory.
+
+		3.) Run run command with specific arguments listed below to call retraining ASR model feature.
+			- docker run -v ${pwd}:/usr/src/app [Name of the image] -m -a [json file path for training data] [json file path for testing data] [the model to retrain] [new retrained model's name] [epoch number]
+			e.g. docker run -v ${pwd}:/usr/src/app asrpipeline -m -a ./Data/Retrain/ASR/ASRTraining.json ./Data/ASRTesting.json facebook/wav2vec2-large-960h-lv60-self facebook_fineTune_test 30
+			
+			3.1) -m tag determine that you are using retraining model feature.
+			3.2) -a tag determine that you are retraining asr model.
+			3.3) if epoch number is not determined by the user, it is defaultly setted as 30.
+
+		4.) The new ASR model will be stored in ./Data/Models/ASR/[the name of the new model].
+
+**Retraining Diarization model:**
+
+		1.) Same as ASR model, prepare the data that you want to use to retrain Diarization model. Read Diarization_Read_Me Training section to know how to prepare the data.
+
+		2.) Make sure that the prepared data is soemwhere inside the parent directory of where the software is located.
+
+		3.) Run run command with specific arguments listed below to call retraining Dairization model feature.
+			- docker run -v ${pwd}:/usr/src/app -m -d [directory/where/the/prepared/data/is/located] [diarization model to retrain] [epoch number] [Where to save the model]
+			e.g. docker run -v ${pwd}:/usr/src/app -m -d ./PyannoteProj/data_preparation/TrainingData/Talkbank/ ./PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52 30 ./Data/Models/Diarization
+
+			3.1) -m tag determine that you are using retraining model feature.
+			3.2) -d tag determine that you are retraining diarization model.
+			3.3) if epoch number is not determined by the user, it is defaultly setted as 30.
+
+		4.) The new Diarization model will be stored in where you defined when you ran the run command.
+
 
 ## Use Cases ##
 
