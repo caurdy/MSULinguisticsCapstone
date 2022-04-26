@@ -264,7 +264,7 @@ These two pieces can be set in a number of ways on an instantiated Wav2Vec2ASR o
 
 Let's say that we have instantiated our model as
 	
-`example_model = Wav2Vec2ASR()`
+	example_model = Wav2Vec2ASR()
 
 
 We can set the above pieces in one of three ways. For each option you can use either a model from HuggingFace's repository 
@@ -295,7 +295,7 @@ We can set the above pieces in one of three ways. For each option you can use ei
 		example_model.createProcessor(example_ngram, example_tokenizer, example_extractor)
 		
 	You can still set the model via:
-		example_model.setModel("facebook/wav2vec2-base-960h")`
+		example_model.setModel("facebook/wav2vec2-base-960h")
 		
 **Some questions you may still have:**
 			
