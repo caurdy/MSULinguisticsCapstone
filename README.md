@@ -273,7 +273,8 @@ We can set the above pieces in one of three ways. For each option you can use ei
 1. **Provide both pieces at once**
 		
     To do this, we simply call the function loadModel()
-	example_model.loadModel("patrickvonplaten/wav2vec2-base-100h-with-lm")
+    
+    		example_model.loadModel("patrickvonplaten/wav2vec2-base-100h-with-lm")
 		
 2. **Provide them separately with a pretrained processor**
 	To set the model part we can use setModel() and then we can use processorFromPretrained() to set the processor from a different location. 
