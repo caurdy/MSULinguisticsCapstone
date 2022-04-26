@@ -273,15 +273,14 @@ We can set the above pieces in one of three ways. For each option you can use ei
 1. **Provide both pieces at once**
 		
     To do this, we simply call the function loadModel()
-			
-	`example_model.loadModel("patrickvonplaten/wav2vec2-base-100h-with-lm")`
+	example_model.loadModel("patrickvonplaten/wav2vec2-base-100h-with-lm")
 		
 2. **Provide them separately with a pretrained processor**
 	To set the model part we can use setModel() and then we can use processorFromPretrained() to set the processor from a different location. 
 	This allows us to use more base models that don't have a Wav2Vec2ProcessorWithLM trained with them.
-			
-	`example_model.setModel("facebook/wav2vec2-base-960h")
-	example_model.processorFromPretrained("patrickvonplaten/wav2vec2-base-100h-with-lm")`
+	
+		example_model.setModel("facebook/wav2vec2-base-960h")
+		example_model.processorFromPretrained("patrickvonplaten/wav2vec2-base-100h-with-lm")
 			
 
 3. **Provide them separately with a language model base.**
@@ -289,15 +288,14 @@ We can set the above pieces in one of three ways. For each option you can use ei
 	Should you have an n-gram model for your language of choice that you'd like to create a processor from, you can do so using the createProcessor() method
 		
 	For this method, you will need to create a Wav2Vec2CTCTokenizer, a Wav2Vec2FeatureExtractor, and an n-gram Model
-
-    `example_tokenizer = Wav2Vec2CTCTokenizer('vocab.json', unk_token='[UNK]', pad_token='[PAD]',word_delimeter_token='|')
-    example_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0, do_normalize=True, return_attention_mask=False)
-    example_ngram = "local_n_gram"
-    example_model.createProcessor(example_ngram, example_tokenizer, example_extractor)`
+	
+		example_tokenizer = Wav2Vec2CTCTokenizer('vocab.json', unk_token='[UNK]', pad_token='[PAD]',word_delimeter_token='|')
+		example_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0, do_normalize=True, return_attention_mask=False)
+		example_ngram = "local_n_gram"
+		example_model.createProcessor(example_ngram, example_tokenizer, example_extractor)
 		
 	You can still set the model via:
-		
-	`example_model.setModel("facebook/wav2vec2-base-960h")`
+		example_model.setModel("facebook/wav2vec2-base-960h")`
 		
 **Some questions you may still have:**
 			
@@ -322,17 +320,17 @@ We can set the above pieces in one of three ways. For each option you can use ei
 ### Prediction: ###
 
 Once the model and processor are set, you can begin to transcribe your audio! To do so you need your audio file to be a .wav file
-
-`example_audio = "test.wav"`
+	
+	example_audio = "test.wav"`
 
 After this, all you have to do is call the predict() method
-
-`transcription, confidence = example_model.predict(audioPath=example_audio)`
+	
+	transcription, confidence = example_model.predict(audioPath=example_audio)`
 
 If you have already gotten your audio array via librosa.load() (found [here](URL "https://librosa.org/doc/latest/generated/librosa.load.html"))
 
-`example_audio = librosa.load(example_audio, sr=16000)
-transcription, confidence = example_model.predict(audioArray=example_audio)`
+	example_audio = librosa.load(example_audio, sr=16000)
+	transcription, confidence = example_model.predict(audioArray=example_audio)
 
 The "transcription" is the string text that resulted from the speech input, and the confidence is the confidence interval the model has that the transcription is correct.
 
@@ -346,21 +344,21 @@ For every audio input in the dataset, there should be the processed wav file (th
 The transcript should be lowercase with all punctuation except apostrophes. 
 For example (note: this example file does not contain valid data):
 		
-`{“text”:{“0”: "According to all known laws of aviation, there is no way a bee should be able to fly."},
-    “audio”:{“0”: [0.0,0.0,0.0,0.0,-0.0000610352,0.0,-0.0000610352,0.0000305176,-0.0001525879,0.0001220703,
-	-0.000213623,0.0002441406,-0.0003967285,0.0005187988,-0.0010070801,0.0036621094,0.0098266602,
-	0.0093078613,0.009765625,0.008605957,0.0099182129,0.0062561035,0.0065307617,0.0067443848,0.00390625,
-	0.0025939941,0.003692627,-0.0018615723,0.005279541,]}}`
+		{“text”:{“0”: "According to all known laws of aviation, there is no way a bee should be able to fly."},
+    		“audio”:{“0”: [0.0,0.0,0.0,0.0,-0.0000610352,0.0,-0.0000610352,0.0000305176,-0.0001525879,0.0001220703,
+		-0.000213623,0.0002441406,-0.0003967285,0.0005187988,-0.0010070801,0.0036621094,0.0098266602,
+		0.0093078613,0.009765625,0.008605957,0.0099182129,0.0062561035,0.0065307617,0.0067443848,0.00390625,
+		0.0025939941,0.003692627,-0.0018615723,0.005279541,]}}
 
 After this, training can be accomplished via
 
-`example_model.train("train_set.json", "test_set.json", "/testOutput/", epochs=30)`
+	example_model.train("train_set.json", "test_set.json", "/testOutput/", epochs=30)
 
 The number of epochs is the number of layers for training. The higher numbers of epochs generally produce better results. However, if you would like training to be less heavy, you can change the amount of epochs to whatever you would like.
 	
 After training is complete, the model and processor pieces of your example_odel object will have changed. To save these changes, we call the saveModel() method with the location where we'd like to save.
 
-`example_model.saveModel("outputlocation/")`
+	example_model.saveModel("outputlocation/")
 
 This way you don't lose the results of training and can use them for future predictions.
 
