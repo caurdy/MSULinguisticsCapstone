@@ -1,7 +1,7 @@
-# MSULinguisticsCapstone
+# MSULinguisticsCapstone #
 An open source Automatic Speech Recognition + Time Alignment software for translating .wav files into formatted text files for linguistics research.
 
-##Installation
+## Installation ##
 ### Conda Environment ###
 
 Requires Anaconda or Miniconda
