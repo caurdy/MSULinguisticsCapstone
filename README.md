@@ -192,12 +192,12 @@ There are two different model you can retrain: ASR model and Diarization model.
 		2.) Make sure that the prepared data is soemwhere inside the parent directory of where the software is located.
 
 		3.) Run run command with specific arguments listed below to call retraining Dairization model feature.
-			- docker run -v ${pwd}:/usr/src/app -m -d [directory/where/the/prepared/data/is/located] [diarization model to retrain] [epoch number] [Where to save the model]
-			e.g. docker run -v ${pwd}:/usr/src/app -m -d ./PyannoteProj/data_preparation/TrainingData/Talkbank/ ./PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52 30 ./Data/Models/Diarization
+			- docker run -v ${pwd}:/usr/src/app -m -d [diarization model to retrain] [epoch number] [Where to save the model]
+			e.g. docker run -v ${pwd}:/usr/src/app -m -d ./Data/Models/Diarization/model_03_25_2022_10_38_52 30 ./Data/Models/Diarization
 
 			3.1) -m tag determine that you are using retraining model feature.
 			3.2) -d tag determine that you are retraining diarization model.
-			3.3) if epoch number is not determined by the user, it is defaultly setted as 30.
+			3.3) if epoch number is not determined by the user, it is defaultly set to 30.
 
 		4.) The new Diarization model will be stored in where you defined when you ran the run command.
 
@@ -205,6 +205,14 @@ There are two different model you can retrain: ASR model and Diarization model.
 ## Use Cases ##
 
 #### 1. Zero-shot time alignment transcription out of the box ####
+***Make sure that Docker is installed.***
+1. Open Terminal and navigate to the directory where you save this software using cd command.
+   1. e.g. cd directory/where/you/saved/this
+2. Call build command to build docker image.
+   1. docker build -t asrpipeline .
+3. Call run command to run docker image and transcribe an audio file.
+   1. docker run -v ${pwd}:/usr/src/app asrpipeline -t ./Data/Audio/Atest.wav
+
 #### 2. Training a new fine-tuned model (ASR) ####
 
 There are two scripts needed to fine-tune a model. dataConfig.py and SpeechToTextHF.py
