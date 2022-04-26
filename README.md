@@ -147,7 +147,7 @@ Maria's txt
 
 ## Speaker Diarization ##
 
-###1. Operation:
+### 1. Operation: ###
 
    There are two parts that make diarization pipeline operate
 
@@ -156,7 +156,7 @@ Maria's txt
    2. **The hyper-parameter of diarization**: This piece will trigger the speaker diarization pipeline, it will activate model in pyannote pipeine so it can be trained or diarize the audio file. it should be a 'json' file.
 	
 
-###2. Implement:
+### 2. Implement: ###
 
    you can instantiate a diarization pipeline as
 	
@@ -183,7 +183,7 @@ Maria's txt
    During the pipeline initialization phase, if the user does not specify the use of any model or pipeline hyperparameters. 
    The object will automatically use the default pre-trained model from Hugging Face website https://huggingface.co/pyannote/segmentation and pre-defined hyperparameters.
 
-###3. Prediction:
+### 3. Prediction: ###
 
    The audio file can start diarizing if the model and pipeline hyper parameters are set. 
    The own  '.wav ' audio file is allowed to do the diarization:
@@ -205,7 +205,7 @@ Maria's txt
 	
    See! we got the diariztion result.
 
-###4. Training:
+### 4. Training: ###
 
    To continue training the model, you need to provide a pre-trained checkpoint as well as the specified training dataset.
 	
@@ -254,7 +254,7 @@ Maria's txt
 
    The model will be saved into the ./'saved_model' file
 	
-###5. Optimization:
+### 5. Optimization: ###
    The Optimization is used to continue improving the model performance.
    Usually, an trained model does not require further tuning of the pre-training hyperparameters. 
    However, if the model performs much better than expected in the pipeline, users can choose to improve the accuracy by Yonghua pipeline hyperparameters.
