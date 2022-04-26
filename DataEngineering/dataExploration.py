@@ -7,7 +7,8 @@ from librosa import load, get_duration
 
 oldDir = '../Data/MCD transcripts - tsv 2022-01-17-1'
 newDir = '../Data/Transcripts'
-newDir = '../../CapstoneCode/Data/wav'
+newDir = '../../../CapstoneCode/Data/Transcripts'
+audioDir = '../../../CapstoneCode/Data/wav'
 
 
 def cleanTranscripts():
@@ -18,12 +19,18 @@ def cleanTranscripts():
 
 def transcriptStatistics():
     count = 0
+    total = 0
     for filename in os.listdir(newDir):
-        path = os.path.join(newDir, filename)
-        size = os.path.getsize(path)
-        if 'correct' in filename and size <= 10000:
-            count += 1
-    print('Number of corrected transcripts ', count, 'less than 10 kb')
+        if 'correct' in filename:
+            audioFilename = filename.replace('-corrected.txt', '.wav')
+            path = os.path.join(audioDir, audioFilename)
+            size = os.path.getsize(path) / 1000
+            if size <= 10000:
+                duration = get_duration(load(path)[0])
+                print(duration)
+                count += 1
+                total += duration
+    print('Number of corrected transcripts ', count, 'less than 10 kb', '\nTotal duration', total)
 
 
 def sizeStatistics():
@@ -40,16 +47,13 @@ def sizeStatistics():
 
 def durationStatistics():
     count = 0
-    filenames = []
     durationTotal = 0
-    for filename in os.listdir(newDir):
-        path = os.path.join(newDir, filename)
-        size_kb = os.path.getsize(path) / 1000
-        if size_kb:
-            durationTotal += round(get_duration(load(path, sr=16000)[0]), 3)
-            count += 1
+    for filename in os.listdir(audioDir):
+        path = os.path.join(audioDir, filename)
+        if 1000 <= os.path.getsize(path)/1000 <= 20000:
+            durationTotal += get_duration(filename=path)
 
-    print('Total duration of files btwn 500 and 20000 KB', durationTotal, ' num:', count)
+    print('Total duration of all audio files (in hours)', durationTotal / 3600)
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Combines ASR, Diarization, PuncRestoration and NER into one class
 If rpunct is throwing use_cuda issues (since you are running on cpu)

@@ -100,11 +100,119 @@ See the use case  **Zero-shot transcription** below for more details on running 
 
 ## Docker ##
 
-Eden fill in
+How to use Docker to generate transcription and retrain model:
+
+
+**Initial Setup:**
+
+In order to run docker, you need to install Docker Desktop dedicated to the OS of your machine.
+Use this link here to download it. https://docs.docker.com/get-docker/
+
+If Docker Desktop is installed, let's start building the image of the software.
+
+
+**Building Image:**
+	
+In order to use the software through Docker, you need to build something call Image in order to use it.
+	Follow the steps below to build the image.
+
+	1.) Open up a terminal (command prompt, windows powershell, etc.).
+		- Just to make sure Docker Desktop is installed, run below to check its version.
+			docker -v
+
+	2.) Navigate to the directory where you saved the software. 
+		- You can run something like below to move to the directory.
+			cd path/to/the/software
+
+	3.) Run build command to build the docker image of this software.
+		- Below is the command to make the image.
+			docker build -t [name of the image] [directory/you/want/to/save]
+			e.g. docker build -t asrpipeline .
+				* If you're saving the image to the current directory, don't forget the period at the end.
+	
+Congratulations! The image is built and now you can run it to start transcribing audio files.
+	Let's see how to run it.
+
+
+**Running Docker Container.**
+	
+There are two main features that you can call.
+
+	1. Transcribing audio file to json file. 
+	2. Retraining Automatic Speech Recognition model or Speaker Diarization model.
+	
+Let's try using the transcribing feature first.
+
+**Transcription:**
+
+		1.) Make sure the audio file that you want to transcribe is Data/Audio directory
+
+		2.) Run run command with specific arguments listed below to call transcription feature.
+			- docker run -v ${pwd}:/usr/src/app [Name of the image] -t [audiofile path]
+			e.g. docker run -v ${pwd}:/usr/src/app asrpipeline -t ./Data/Audio/Atest.wav
+
+			2.1) "-t" after image name is the tag to choose transcription feature to run. 
+			2.2) Default ASR model and Diarization model it uses are the below
+				ASR Model: facebook/wav2vec2-large-960h-lv60-self
+				Diarization Model: ./Data/Models/Diarization/model_03_25_2022_10_38_52
+		
+		3.) If you want to specify ASR model and/or Diarization model to use, add asr model and diarization model in that order after the audio file path.
+			- docker run -v ${pwd}:/usr/src/app [Name of the image] -t [audiofile path] [asr model] [diarization model]
+			e.g. docker run -v ${pwd}:/usr/src/app asrpipeline -t ./Data/Audio/Atest.wav caurdy/wav2vec2-large-960h-lv60-self_MIDIARIES_72H_FT ./PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52
+		
+			3.1) For ASR model, you can use either pretrained model from HuggingFace or custom retrained model. We will talk about cutom retrained model later.
+
+		4.) After it ran the command to create transcript, the transcript file will be saved to Data/Transcripts folder as "[name of the audio file]_transcript.json"
+
+
+Since transcribing is done, let's now try retraining the model.
+	
+There are two different model you can retrain: ASR model and Diarization model.
+
+**Retraining ASR model:**
+
+		1.) Prepare the data that you want to use to retrain ASR model, one for training and one for testing. Read ASR_Read_Me Training section to know how to prepare the data.
+		
+		2.)  Make sure that the prepared data is in Data directory.
+
+		3.) Run run command with specific arguments listed below to call retraining ASR model feature.
+			- docker run -v ${pwd}:/usr/src/app [Name of the image] -m -a [json file path for training data] [json file path for testing data] [the model to retrain] [new retrained model's name] [epoch number]
+			e.g. docker run -v ${pwd}:/usr/src/app asrpipeline -m -a ./Data/Retrain/ASR/ASRTraining.json ./Data/ASRTesting.json facebook/wav2vec2-large-960h-lv60-self facebook_fineTune_test 30
+			
+			3.1) -m tag determine that you are using retraining model feature.
+			3.2) -a tag determine that you are retraining asr model.
+			3.3) if epoch number is not determined by the user, it is defaultly setted as 30.
+
+		4.) The new ASR model will be stored in ./Data/Models/ASR/[the name of the new model].
+
+**Retraining Diarization model:**
+
+		1.) Same as ASR model, prepare the data that you want to use to retrain Diarization model. Read Diarization_Read_Me Training section to know how to prepare the data.
+
+		2.) Make sure that the prepared data is soemwhere inside the parent directory of where the software is located.
+
+		3.) Run run command with specific arguments listed below to call retraining Dairization model feature.
+			- docker run -v ${pwd}:/usr/src/app -m -d [diarization model to retrain] [epoch number] [Where to save the model]
+			e.g. docker run -v ${pwd}:/usr/src/app -m -d ./Data/Models/Diarization/model_03_25_2022_10_38_52 30 ./Data/Models/Diarization
+
+			3.1) -m tag determine that you are using retraining model feature.
+			3.2) -d tag determine that you are retraining diarization model.
+			3.3) if epoch number is not determined by the user, it is defaultly set to 30.
+
+		4.) The new Diarization model will be stored in where you defined when you ran the run command.
+
 
 ## Use Cases ##
 
 #### 1. Zero-shot time alignment transcription out of the box ####
+***Make sure that Docker is installed.***
+1. Open Terminal and navigate to the directory where you save this software using cd command.
+   1. e.g. cd directory/where/you/saved/this
+2. Call build command to build docker image.
+   1. docker build -t asrpipeline .
+3. Call run command to run docker image and transcribe an audio file.
+   1. docker run -v ${pwd}:/usr/src/app asrpipeline -t ./Data/Audio/Atest.wav
+
 #### 2. Training a new fine-tuned model (ASR) ####
 
 There are two scripts needed to fine-tune a model. dataConfig.py and SpeechToTextHF.py
@@ -147,4 +255,123 @@ Maria's txt
 
 ## Speaker Diarization ##
 
-Yichen's txt
+### 1. Operation: ###
+
+   There are two parts that make diarization pipeline operate
+
+   1. **The pyannote segmentation model:** This part takes the specific voice detection model to be used. it is the pytorch checkpoint '.ckpt' file. 
+		
+   2. **The hyper-parameter of diarization**: This piece will trigger the speaker diarization pipeline, it will activate model in pyannote pipeine so it can be trained or diarize the audio file. it should be a 'json' file.
+	
+
+### 2. Implement: ###
+
+   you can instantiate a diarization pipeline as
+	
+		diarization = SpeakerDiaImplement()
+
+   For diarization implementation, you can use either a model from HuggingFace's pyannote.audio repository (found here: "https://huggingface.co/pyannote/segmentation") or a location of a model file on your local machine. 
+
+   There are two ways to select a model uesd for implementation:
+
+   1. **Provide both parts at once** 
+   To do this, we simply call the function AddPipeline():
+				
+             diarization.AddPipeline(model_name="data_preparation/saved_model/{}/seg_model.ckpt".format(model_name), 
+                                     parameter_name="data_preparation/saved_model/{}/hyper_parameter.json".format(model_name))
+			
+
+   2. **Provide them separately**
+			
+      There is an alternative way to set the model  that calls "AddModel()" to set indicated segementation model and parameter that calls " AddParams()" to set new hyper-parameters. 
+				
+             diarization.AddModel(model_name="data_preparation/saved_model/{}/seg_model.ckpt".format(model_name))
+	         diarization.AddParams("data_preparation/saved_model/{}/hyper_parameter.json".format(model_name))
+
+   During the pipeline initialization phase, if the user does not specify the use of any model or pipeline hyperparameters. 
+   The object will automatically use the default pre-trained model from Hugging Face website https://huggingface.co/pyannote/segmentation and pre-defined hyperparameters.
+
+### 3. Prediction: ###
+
+   The audio file can start diarizing if the model and pipeline hyper parameters are set. 
+   The own  '.wav ' audio file is allowed to do the diarization:
+
+      example_audio = "test.wav"
+	
+   Once the wav file is set, the diarization can start using "Diarization()" method:
+
+      diarization.Diarization(example_audio)
+
+   As we said in the introduction, the purpose of speaker classification is to classify "who said what" as accurately as possible. 
+   So, the pyannote model returns a rttm file as a result. 
+   This file consists of "file name", "start time", "duration" and "speaker id". The sample results are as follows:
+			      
+             "name"  "start" "duration"      "id"	
+     SPEAKER Atest 1 1.2870  4.877 <NA> <NA> SPEAKER_01 <NA> <NA>
+     SPEAKER Atest 1 10.535  0.675 <NA> <NA> SPEAKER_00 <NA> <NA>
+     SPEAKER Atest 1 12.745  2.565 <NA> <NA> SPEAKER_00 <NA> <NA>
+	
+   See! we got the diariztion result.
+
+### 4. Training: ###
+
+   To continue training the model, you need to provide a pre-trained checkpoint as well as the specified training dataset.
+	
+   The data directory should have three subfolders in it by the name of  “RTTM_set”,  “UEM_set” and “WAV_set”. 
+   When those three directories are provided, it will automatically generate the configuration file, which is of ‘.yml’ format,  that allows the speaker diarization model to be retrained 
+   (the database format from "https://github.com/pyannote/pyannote-database#speaker-diarization"). 
+	
+   For example: 
+
+      {SampleData:
+         {SpeakerDiarization:
+            { only_words:
+               { development:
+                  {annotated: ./data_preparation/TrainingData/SampleData/UEM_set/{uri}.uem,
+                   annotation: ./data_preparation/TrainingData/SampleData/RTTM_set/{uri}.rttm,
+                   uri: ./data_preparation/TrainingData/SampleData/LIST_set/dev.txt},
+               { test:
+                  {annotated: ./data_preparation/TrainingData/SampleData/UEM_set/{uri}.uem,
+                   annotation: ./data_preparation/TrainingData/SampleData/RTTM_set/{uri}.rttm,
+                   uri: ./data_preparation/TrainingData/SampleData/LIST_set/test.txt,}
+               { train:
+                  {annotated: ./data_preparation/TrainingData/SampleData/UEM_set/{uri}.uem
+                   annotation: ./data_preparation/TrainingData/SampleData/RTTM_set/{uri}.rttm
+                   uri: ./data_preparation/TrainingData/SampleData/LIST_set/train.txt}}}}}}
+
+   Since we have already set the model properly before, the training process can be accomplished via:
+
+      diarization.TrainData('SampleData', epoch_num=5)
+
+   If you want to change the model to train, it is easy to  just call the AddPipeline() again to change the model that you want to retain.
+
+   Because the speaker classification model is hard to see with the naked eye that there is anything wrong with it. Usually, the error rate of the model is calculated by this formula:
+   detectionErrorRate = (false alarm + missed detection)/total. where false alarm is the duration of non-speech that is incorrectly classified as speech, 
+   missed detection is the duration of speech that is incorrectly classified as non-speech, and total is the total duration of speech.
+
+   The argument 'epoch_num'  is the number of iterations used for training throught all training dataset. You can change the number of epochs to any number you want. 
+   Usually, the higher number of epochs will usually produce better results. 
+
+   At the end of training, the detection error rate will also be counted throughtout the same test dataset, so that the difference of model performance between the  of 'original model' and 'new model' seems reasonable.
+
+   the result of comparison will shows like this:
+
+      file TS3012c Sliding Windows check down (1/2) Processing Time: 10.794447183609009
+      file TS3012d Sliding Windows check down (2/2) Processing Time: 10.726176738739014
+      The previous segmentation error rate is '18.990595481852527', and the new one is '18.97516839361221'
+
+   The model will be saved into the ./'saved_model' file
+	
+### 5. Optimization: ###
+   The Optimization is used to continue improving the model performance.
+   Usually, an trained model does not require further tuning of the pre-training hyperparameters. 
+   However, if the model performs much better than expected in the pipeline, users can choose to improve the accuracy by Yonghua pipeline hyperparameters.
+   Optimizing the pipeline can be done in this way:
+		
+      diarization.Optimization(model, dataset_name, num_opti_iteration=20, embedding_batch_size=16)
+
+   num_opti_iteration The purpose is to specify the number of iterations the optimizer will perform. Usually the more iterations there are, the more accurate the hyperparameter will be returned. 
+   It is worth noting that iterations greater than twenty are recommended, as too low an iteration may result in the model not finding better hyperparameters.
+
+   Optimizing hyperparameters is a very time-consuming process. However, the hyperparameters do not need to be changed. 
+   However, if this process is necessary, it is recommended that the optimization be done with a computer powered by a gpu.
