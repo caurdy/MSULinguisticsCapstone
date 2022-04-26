@@ -354,7 +354,7 @@ For example (note: this example file does not contain valid data):
 
 After this, training can be accomplished via
 
-`example_model.train("train_set.json", "test_set.json", "/testOutput/", epcohs=30)`
+`example_model.train("train_set.json", "test_set.json", "/testOutput/", epochs=30)`
 
 The number of epochs is the number of layers for training. The higher numbers of epochs generally produce better results. However, if you would like training to be less heavy, you can change the amount of epochs to whatever you would like.
 	
