@@ -1,7 +1,0 @@
-{"stitch_threshold": 0.23120916901894611,
-  "onset": 0.5495666324993761,
-  "offset": 0.6905980099341594,
-  "min_duration_on": 0.0,
-  "min_duration_off": 0.6701411532662861,
-  "min_activity": 9.866498584134124,
-  "clustering": {"threshold": 0.595, "method": "average"}}

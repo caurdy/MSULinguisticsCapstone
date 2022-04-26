@@ -1,11 +1,8 @@
 import sys
-from Combine.transcription import combineFeatures
 from Combine.TimeAligned_Alter import ASRTimeAligner
 from DataScience.SpeechToTextHF import Wav2Vec2ASR
 from PyannoteProj.TestPipline import SpeakerDiaImplement
 from os.path import isfile, isdir
-import os
-import pandas as pd
 import torch.cuda
 
 
@@ -23,10 +20,6 @@ def main():
 
     # create transcript
 
-    # options
-    # -t = create transcript.
-    # follow by the name of the file to transcribe and name of the two models
-    # e.g. "-t" "./Data/Audio/Atest.wav" "facebook/wav2vec2-large-960h-lv60-self" "./PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52"
     if sys.argv[1] == "-t":
         audio_file = sys.argv[2]
         audio_name = audio_file.split('/')[-1][:-4]
@@ -50,15 +43,6 @@ def main():
 
     # create new models
 
-    # 1. -m: option to enter creating new model option
-    # 2. -a/-d: choose either automatic speech recognition model or speaker diarization model to retrain.
-    # 3. Directory: the directory of a file/folder that has data to retrain the model
-        # 3.1. Directory: if -a is chosen, then need to provide a directory for testing data.
-    # 4. Model Name: the model to retrain.
-        # 4.1. Model Name: if -a is chosen, then need to provide the new name of the retrained model.
-    # 5. Epoch: the user can provide the epoch number. Default is 30.
-    # e.g. -m -a ./Data/correctedShort.json ./Data/correctedShort.json facebook/wav2vec2-large-960h-lv60-self facebook_fineTune_test 30
-    # e.g. -m -d ./PyannoteProj/data_preparation/TrainingData/Talkbank/ ./PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52 30 ./Data/Models/Diarization
     elif sys.argv[1] == "-m":
         # create new asr huggingface model
         if sys.argv[2] == "-a":
@@ -80,17 +64,16 @@ def main():
         elif sys.argv[2] == "-d":
             print("Creating new diarization model.")
             dia_pipeline = SpeakerDiaImplement()
-            dia_pipeline.AddPipeline(model_name=f"{sys.argv[4]}/seg_model.ckpt",
-                                     parameter_name=f"{sys.argv[4]}/hyper_parameter.json")
+            dia_pipeline.AddPipeline(model_name=f"{sys.argv[3]}/seg_model.ckpt",
+                                     parameter_name=f"{sys.argv[3]}/hyper_parameter.json")
             epo = 30
+            if len(sys.argv) > 4:
+                epo = int(sys.argv[4])
+
             if len(sys.argv) > 5:
-                epo = int(sys.argv[5])
-
-            if len(sys.argv) > 6:
-                dia_pipeline.TrainData(sys.argv[3], sys.argv[6], epoch_num=epo)
-                return
-
-            dia_pipeline.TrainData(sys.argv[3], epoch_num=epo)
+                dia_pipeline.TrainData(save_folder=sys.argv[5], epoch_num=epo)
+            else:
+                dia_pipeline.TrainData(epoch_num=epo)
 
         else:
             print("Error: Please choose the type of model you want to retrain. Choose from -a, -d.")

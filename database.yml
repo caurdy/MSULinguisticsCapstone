@@ -1,50 +1,50 @@
 Databases:
-  AMI: assets/TrainingData/AMI_set/WAV_set/ami/database/amicorpus/{uri}/audio/{uri}.Mix-Headset.wav
-  SampleData: assets/TrainingData/SampleData/WAV_set/{uri}.wav
-  Talkbank: assets/TrainingData/Talkbank/WAV_set/{uri}.wav
+  AMI: Data/PyannoteData/TrainingData/AMI_set/WAV_set/ami/database/amicorpus/{uri}/audio/{uri}.Mix-Headset.wav
+  SampleData: Data/PyannoteData/TrainingData/SampleData/WAV_set/{uri}.wav
+  Talkbank: Data/PyannoteData/TrainingData/Talkbank/WAV_set/{uri}.wav
 Protocols:
   AMI:
     SpeakerDiarization:
       only_words:
         development:
-          annotated: assets/TrainingData/AMI_set/UEM_set/uems/dev/{uri}.uem
-          annotation: assets/TrainingData/AMI_set/RTTM_set/only_words/rttms/dev/{uri}.rttm
-          uri: assets/TrainingData/AMI_set/LIST_set/lists/dev.meetings.txt
+          annotated: Data/PyannoteData/TrainingData/AMI_set/UEM_set/uems/dev/{uri}.uem
+          annotation: Data/PyannoteData/TrainingData/AMI_set/RTTM_set/only_words/rttms/dev/{uri}.rttm
+          uri: Data/PyannoteData/TrainingData/AMI_set/LIST_set/lists/dev.meetings.txt
         test:
-          annotated: assets/TrainingData/AMI_set/UEM_set/uems/test/{uri}.uem
-          annotation: assets/TrainingData/AMI_set/RTTM_set/only_words/rttms/test/{uri}.rttm
-          uri: assets/TrainingData/AMI_set/LIST_set/lists/test.meetings.txt
+          annotated: Data/PyannoteData/TrainingData/AMI_set/UEM_set/uems/test/{uri}.uem
+          annotation: Data/PyannoteData/TrainingData/AMI_set/RTTM_set/only_words/rttms/test/{uri}.rttm
+          uri: Data/PyannoteData/TrainingData/AMI_set/LIST_set/lists/test.meetings.txt
         train:
-          annotated: assets/TrainingData/AMI_set/UEM_set/uems/train/{uri}.uem
-          annotation: assets/TrainingData/AMI_set/RTTM_set/only_words/rttms/train/{uri}.rttm
-          uri: assets/TrainingData/AMI_set/LIST_set/lists/train.meetings.txt
+          annotated: Data/PyannoteData/TrainingData/AMI_set/UEM_set/uems/train/{uri}.uem
+          annotation: Data/PyannoteData/TrainingData/AMI_set/RTTM_set/only_words/rttms/train/{uri}.rttm
+          uri: Data/PyannoteData/TrainingData/AMI_set/LIST_set/lists/train.meetings.txt
   SampleData:
     SpeakerDiarization:
       only_words:
         development:
-          annotated: assets/TrainingData/SampleData/UEM_set/{uri}.uem
-          annotation: assets/TrainingData/SampleData/RTTM_set/{uri}.rttm
-          uri: assets/TrainingData/SampleData/LIST_set/dev.txt
+          annotated: Data/PyannoteData/TrainingData/SampleData/UEM_set/{uri}.uem
+          annotation: Data/PyannoteData/TrainingData/SampleData/RTTM_set/{uri}.rttm
+          uri: Data/PyannoteData/TrainingData/SampleData/LIST_set/dev.txt
         test:
-          annotated: assets/TrainingData/SampleData/UEM_set/{uri}.uem
-          annotation: assets/TrainingData/SampleData/RTTM_set/{uri}.rttm
-          uri: assets/TrainingData/SampleData/LIST_set/test.txt
+          annotated: Data/PyannoteData/TrainingData/SampleData/UEM_set/{uri}.uem
+          annotation: Data/PyannoteData/TrainingData/SampleData/RTTM_set/{uri}.rttm
+          uri: Data/PyannoteData/TrainingData/SampleData/LIST_set/test.txt
         train:
-          annotated: assets/TrainingData/SampleData/UEM_set/{uri}.uem
-          annotation: assets/TrainingData/SampleData/RTTM_set/{uri}.rttm
-          uri: assets/TrainingData/SampleData/LIST_set/train.txt
+          annotated: Data/PyannoteData/TrainingData/SampleData/UEM_set/{uri}.uem
+          annotation: Data/PyannoteData/TrainingData/SampleData/RTTM_set/{uri}.rttm
+          uri: Data/PyannoteData/TrainingData/SampleData/LIST_set/train.txt
   Talkbank:
     SpeakerDiarization:
       only_words:
         development:
-          annotated: assets/TrainingData/Talkbank/UEM_set/{uri}.uem
-          annotation: assets/TrainingData/Talkbank/RTTM_set/{uri}.rttm
-          uri: assets/TrainingData/Talkbank/LIST_set/dev.txt
+          annotated: Data/PyannoteData/TrainingData/Talkbank/UEM_set/{uri}.uem
+          annotation: Data/PyannoteData/TrainingData/Talkbank/RTTM_set/{uri}.rttm
+          uri: Data/PyannoteData/TrainingData/Talkbank/LIST_set/dev.txt
         test:
-          annotated: assets/TrainingData/Talkbank/UEM_set/{uri}.uem
-          annotation: assets/TrainingData/Talkbank/RTTM_set/{uri}.rttm
-          uri: assets/TrainingData/Talkbank/LIST_set/test.txt
+          annotated: Data/PyannoteData/TrainingData/Talkbank/UEM_set/{uri}.uem
+          annotation: Data/PyannoteData/TrainingData/Talkbank/RTTM_set/{uri}.rttm
+          uri: Data/PyannoteData/TrainingData/Talkbank/LIST_set/test.txt
         train:
-          annotated: assets/TrainingData/Talkbank/UEM_set/{uri}.uem
-          annotation: assets/TrainingData/Talkbank/RTTM_set/{uri}.rttm
-          uri: assets/TrainingData/Talkbank/LIST_set/train.txt
+          annotated: Data/PyannoteData/TrainingData/Talkbank/UEM_set/{uri}.uem
+          annotation: Data/PyannoteData/TrainingData/Talkbank/RTTM_set/{uri}.rttm
+          uri: Data/PyannoteData/TrainingData/Talkbank/LIST_set/train.txt

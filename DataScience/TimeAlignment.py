@@ -10,7 +10,7 @@ import sys
 import inspect
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-#os.environ["CUDA_VISIBLE_DEVICES"] = ""  # comment this out and pass use_cuda=True to enable gpus
+# Setting path for local imports OS/IDE-agnostic
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
@@ -20,23 +20,12 @@ import json
 import librosa
 import pandas as pd
 import torch.cuda
+from fastpunct import FastPunct
+from rpunct import RestorePuncts
 
 from DataScience.SpeechToTextHF import Wav2Vec2ASR
 from PyannoteProj.TestPipline import SpeakerDiaImplement
 from NamedEntityRecognition.ner import ner
-from fastpunct import FastPunct
-from rpunct import RestorePuncts
-
-
-def run_cuda_setup():
-    if torch.cuda.is_available():
-        torch.cuda.set_device('cuda:0')
-        print('Set device to', torch.cuda.current_device())
-        print('Current memory stats\n', torch.cuda.memory_summary(abbreviated=True))
-        # for i in range(1, 3):
-        #     print(torch.cuda.memory_summary('cuda:' + str(i), abbreviated=True))
-    else:
-        print("CUDA not available, defaulting to CPU")
 
 
 class ASRTimeAligner:
@@ -53,21 +42,27 @@ class ASRTimeAligner:
         """
         :param asrModel: Wav2Vec2ASR model path
         :param diarizationModelPath: Directory name of saved diarization model
-        :param punctuationModel: Punctuation Model
-        :param nerModel: NER model
+        :param punctuationModel: Punctuation Model, for now THIS SHOULD NOT BE USED
+        :param nerModel: NER model, for now, THIS SHOULD NOT BE USED
         :param use_cuda: Whether to use cuda for inference on all models
                             (diarization will use gpu if it exists, have to edit source to change)
         """
         self.useCuda = useCuda
+        if torch.cuda.is_available() and self.useCuda:
+            self.useCuda = True
+        else:
+            self.useCuda = False
+        self.run_cuda_setup()
+
         self.asrModel = Wav2Vec2ASR(useCuda)
         self.asrModel.loadModel(asrModel)
         self.diarizationModel = SpeakerDiaImplement()
-        self.diarizationModel.AddPipeline(model_name="{}/seg_model.ckpt".format(diarizationModelPath),
-                                          parameter_name="{}/hyper_parameter.json".format(diarizationModelPath))
+        # self.diarizationModel.AddPipeline(model_name="{}/seg_model.ckpt".format(diarizationModelPath),
+        #                                   parameter_name="{}/hyper_parameter.json".format(diarizationModelPath))
         if punctuationModel:
             self.punctuationModel = punctuationModel
         else:
-            if torch.cuda.is_available() and useCuda:
+            if self.useCuda:
                 self.punctuationModel = RestorePuncts()
             else:
                 self.punctuationModel = FastPunct()
@@ -79,7 +74,7 @@ class ASRTimeAligner:
 
         self.transcripts = []
 
-    def timeAlign(self, audioPath: str, outputDir: str = '.'):
+    def timeAlign(self, audioPath: str, outputDir: str = '.', writeOutput: bool = True):
         """
         Writes a json output of time aligned output to outputDir
         Name of output is {audioPath}.json
@@ -87,25 +82,19 @@ class ASRTimeAligner:
         :param audioPath: str path to
         :return: List of json objects, diarization runtime, ASR runtime, Avg. ASR confidence
         """
-        # print('Before diarization\n', torch.cuda.memory_summary(abbreviated=True))
-        # print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
         diarization_time1 = time.perf_counter()
         rttm_path = self.diarizationModel.Diarization(audioPath)
         diarization_time2 = time.perf_counter()
-        # print('After diarization\n', torch.cuda.memory_summary(abbreviated=True))
-        # print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
 
         # Convert rttm file to csv
         dair_csv = pd.read_csv(rttm_path, delimiter=' ', header=None)
-        # print('Diarization DF\n', dair_csv)
         dair_csv.columns = ['Type', 'Audio File', 'IDK', 'Start Time', 'Duration', 'N/A', 'N/A', 'ID', 'N/A', 'N/A']
 
         # Read Audio file
         data, sample_rate = librosa.core.load(audioPath, sr=16000)
         transcriptions = []
 
-        # print('Before time alignment\n', torch.cuda.memory_summary(abbreviated=True))
-        # print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
+
         # Loop through all the rows in diarization file which will give us
         # start/end times for audio section to transcribe
         total_conf = 0
@@ -125,11 +114,10 @@ class ASRTimeAligner:
                                    "Confidence": str(confidence), })
         process_end_time = time.perf_counter()
 
-        # print('After time alignment\n', torch.cuda.memory_summary(abbreviated=True))
-        # print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
-        transcript_path = audioPath.replace('.wav', '.json')
-        with open(transcript_path, "w") as jsonFile:
-            json.dump(transcriptions, jsonFile)
+        if writeOutput:
+            transcript_path = audioPath.replace('.wav', '.json')
+            with open(transcript_path, "w") as jsonFile:
+                json.dump(transcriptions, jsonFile)
 
         diarization_time = round(diarization_time2 - diarization_time1, 3)
         transcription_time = round(process_end_time - process_begin_time, 3)
@@ -169,7 +157,7 @@ class ASRTimeAligner:
         """
         Wrapper for punctuation model inference since their APIS differ
         """
-        if torch.cuda.is_available() and self.useCuda:
+        if self.useCuda:
             punc_restored = self.punctuationModel.punctuate(text, lang="en")
         else:
             word_list = text.split()
@@ -189,32 +177,87 @@ class ASRTimeAligner:
 
         return punc_restored
 
+    def run_cuda_setup(self):
+        if self.useCuda:
+            import tensorflow
+            torch.cuda.device('cuda')
+            print('Set device to', torch.cuda.current_device())
+            # Torch can only run on 8 gpus max, in parallel
+            if torch.cuda.device_count() > 8:
+                os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6,7"
+
+            physical_devices = tensorflow.config.list_physical_devices('GPU')
+            try:
+                tensorflow.config.experimental.set_memory_growth(physical_devices[0], True)
+            except:
+                # Invalid device or cannot modify virtual devices once initialized.
+                physical_devices = tensorflow.config.PhysicalDevice("CPU")
+        else:
+            if not torch.cuda.is_available():
+                print("GPU not available, defaulting to CPU")
+            else:
+                print("CPU Execution Selected")
+
 
 if __name__ == '__main__':
-    run_cuda_setup()
-    file = '../assets/0short_audio.wav'
-    timeAligner = ASRTimeAligner(useCuda=True)
-    # print('After intialization\n', torch.cuda.memory_summary(abbreviated=True))
-    # print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
-    dtt, ttt, t1t, t2t = 0, 0, 0, 0
+    """
+    Parameters: useCuda, dir
+    """
+    # input processing
+    if len(sys.argv) < 3:
+        raise UserWarning("Not enough parameters entered. Enter an use_cuda and directory parameter. "
+                          "E.x. 'python TimeAlignment.py true demo'")
 
-    with open('../Data/minuteFiles.txt', 'r') as fp:
-        for file in fp.readlines():
-            file = os.path.join('../Data/wav', file.strip())
-            print('Processing', file)
-            transcriptions, dt, tt, avg_confidence = timeAligner.timeAlign(file)
-            print(dt, tt, '\n', transcriptions)
-            transcript, t1, t2 = timeAligner.getEntitiesLastTranscript()
-            print(t1, t2, '\n', transcript)
-            dtt += dt
-            ttt += tt
-            t1t = t1
-            t2t = t2
-    print('Average runtimes on files btwn 55 and 65 seconds')
-    print('Average diarization runtime:', dtt/24)
-    print('Average asr runtime:', ttt / 24)
-    print('Average punc time:', t1t/24)
-    print('Average ner time:', t2t/24)
-    # for i in range(3):
-    # print(torch.cuda.memory_summary('cuda:'+str(i), abbreviated=True))
-    # print(torch.cuda.memory_summary(abbreviated=True))
+    if sys.argv[1].lower() == 'true':
+        useCuda = True
+    elif sys.argv[1].lower() == 'false':
+        useCuda = False
+    else:
+        raise UserWarning("Invalid use_cuda parameters, options include [false, true]")
+
+    if sys.argv[2].lower() == 'demo':
+        audioDir = '../Data/demo'
+    elif os.path.exists(sys.argv[2]) and os.path.isdir(sys.argv[2]):
+        audioDir = sys.argv[2]
+    else:
+        raise UserWarning("Invalid path input, please provide a legal path to a directory")
+
+    print('Arguments', str(sys.argv))
+
+    # make a directory for the transcripts
+    try:
+        transcriptDir = os.path.join(audioDir, "Transcriptions")
+        os.mkdir(transcriptDir)
+    except FileExistsError as e:
+        raise FileExistsError("Delete the old Transcriptions folder in ", audioDir, ".")
+
+    # transcribe the files in the directory
+    timeAligner = ASRTimeAligner(useCuda=useCuda)
+    for filename in os.listdir(audioDir):
+        if '.wav' in filename:
+            audioPath = os.path.join(audioDir, filename)
+            transcriptRough, dt, tt, avg_confidence = timeAligner.timeAlign(audioPath, writeOutput=False)
+            transcriptPunctuated, pt, nt = timeAligner.getEntitiesLastTranscript()
+            transcript_path = os.path.join(transcriptDir, filename.replace('.wav', '.json'))
+            with open(transcript_path, "w") as jsonFile:
+                json.dump(transcriptPunctuated, jsonFile)
+                print('Processed', transcript_path)
+
+    dtt, ttt, t1t, t2t = 0, 0, 0, 0
+    # with open('../Data/minuteFiles.txt', 'r') as fp:
+    #     for file in fp.readlines():
+    #         file = os.path.join('../Data/wav', file.strip())
+    #         print('Processing', file)
+    #         transcriptions, dt, tt, avg_confidence = timeAligner.timeAlign(file)
+    #         print(dt, tt, '\n', transcriptions)
+    #         transcript, t1, t2 = timeAligner.getEntitiesLastTranscript()
+    #         print(t1, t2, '\n', transcript)
+    #         dtt += dt
+    #         ttt += tt
+    #         t1t = t1
+    #         t2t = t2
+    # print('Average runtimes on files btwn 55 and 65 seconds')
+    # print('Average diarization runtime:', dtt / 24)
+    # print('Average asr runtime:', ttt / 24)
+    # print('Average punc time:', t1t / 24)
+    # print('Average ner time:', t2t / 24)
