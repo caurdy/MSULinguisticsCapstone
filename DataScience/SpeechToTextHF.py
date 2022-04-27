@@ -1,8 +1,9 @@
+#!/usr/bin/env python
 """
 Wav2Vec2ASR is a wrapper around HF wav2vec2forCTC models for both training and inferenece
 Reference: https://huggingface.co/blog/fine-tune-wav2vec2-english
 """
-
+import sys
 
 import torch
 import librosa
@@ -18,7 +19,8 @@ from dataclasses import dataclass
 import os
 
 os.environ["WANDB_DISABLED"] = "true"
-#os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:<10000>"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6,7"
+
 
 def run_cuda_setup():
     if torch.cuda.is_available():
@@ -26,7 +28,7 @@ def run_cuda_setup():
         print('Set device to', torch.cuda.current_device())
         # Torch can only run on 8 gpus max, in parallel
         if torch.cuda.device_count() > 8:
-            os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6,7"
+            pass
     else:
         torch.cuda.device('cpu')
         print("CUDA not available, defaulting to CPU")
@@ -111,7 +113,6 @@ class Wav2Vec2ASR:
         if torch.cuda.is_available():
             self.use_cuda = use_cuda
             self.device = "cuda"
-
         else:
             self.use_cuda = False
             self.device = "cpu"
@@ -121,18 +122,9 @@ class Wav2Vec2ASR:
         if self.model is None or self.processor is None:
             raise Exception("Ensure both the Model and Processor are set")
 
-        print('Before loading train\n', torch.cuda.memory_summary(abbreviated=True))
-        print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
-
         dataset_train = self.load_dataset(datafile_train)
 
-        print('After loading train\n', torch.cuda.memory_summary(abbreviated=True))
-        print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
-
         dataset_test = self.load_dataset(datafile_test)
-
-        print('After loading test\n', torch.cuda.memory_summary(abbreviated=True))
-        print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
 
         data_collator = DataCollatorCTCWithPadding(processor=self.processor, padding=True)
 
@@ -141,17 +133,18 @@ class Wav2Vec2ASR:
         training_args = TrainingArguments(
             output_dir=outputDir,
             group_by_length=True,
-            per_device_train_batch_size=6,
+            per_device_train_batch_size=4,
             evaluation_strategy="steps",
             num_train_epochs=num_epochs,
-            gradient_checkpointing=1,
-            fp16=True,
+            gradient_checkpointing=True,
+            gradient_accumulation_steps=1,
+            fp16=torch.cuda.is_available(),
             save_steps=100,
             eval_steps=50,
             logging_steps=100,
             learning_rate=3e-4,
             weight_decay=0.005,
-            warmup_steps=400,
+            warmup_steps=200,
             save_total_limit=2,
             push_to_hub=False,
             no_cuda=False
@@ -182,8 +175,7 @@ class Wav2Vec2ASR:
 
         if audioArray is None:
             audioArray, _ = librosa.load(audioPath, sr=16000)
-        # print('Before Predict:\n', torch.cuda.memory_summary(abbreviated=True))
-        # print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
+
         self.model.eval()
         with torch.no_grad():
             if self.usingLM:
@@ -198,33 +190,26 @@ class Wav2Vec2ASR:
                                               padding=True).input_values
                 if torch.cuda.is_available() and self.use_cuda:
                     input_values = input_values.to('cuda:0')
-                # print('After moving input values\n', torch.cuda.memory_summary(abbreviated=True))
-                # print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
+
                 logits = self.model(input_values).logits
                 predicted_ids = torch.argmax(logits, dim=-1)
                 transcription = self.processor.batch_decode(predicted_ids)[0]
-                # print('After running model and decoding logits\n', torch.cuda.memory_summary(abbreviated=True))
-                # print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
 
             logits = self.model(input_values).logits
             probs = self.SOFTMAX_TORCH(logits)
             max_probs = torch.max(probs, dim=-1)[0]
             confidence = (torch.sum(max_probs) / len(max_probs[0])).cpu().numpy()
-            # print('After confidence calculations\n', torch.cuda.memory_summary(abbreviated=True))
-            # print(torch.cuda.memory_summary('cuda:1', abbreviated=True))
 
         return transcription, confidence
 
     def compute_metrics(self, pred):
         pred_logits = pred.predictions
         pred_ids = np.argmax(pred_logits, axis=-1)
-
         pred.label_ids[pred.label_ids == -100] = self.processor.tokenizer.pad_token_id
 
         pred_str = self.processor.batch_decode(pred_ids)
         # we do not want to group tokens when computing the metrics
         label_str = self.processor.batch_decode(pred.label_ids, group_tokens=False)
-
         wer = self.wer_metric.compute(predictions=pred_str, references=label_str)
 
         return {"wer": wer}
@@ -232,7 +217,7 @@ class Wav2Vec2ASR:
     def evaluate(self, dataset_file):
         """
         Evaluate the current model on a set of data for WER metric
-        :param dataset_file: json file produced by convertToDataFrame()
+        :param dataset_file: json file produced by map_to_result()
         :return:
         """
         def map_to_result(batch):
@@ -248,14 +233,12 @@ class Wav2Vec2ASR:
         dataset = self.load_dataset(dataset_file)
         results = dataset.map(map_to_result, remove_columns=['audio'])
         wer = self.wer_metric.compute(predictions=results["pred_str"], references=results["text"])
-        print("Test WER: {:.3f}".format(wer))
         return wer
 
     def prepare_dataset(self, batch):
         audio = batch["audio"]
 
         # batched output is "un-batched" to ensure mapping is correct
-        # print(processor(audio, sampling_rate=batch['sampling_rate']).input_values[0])
         batch["input_values"] = self.processor(audio, sampling_rate=batch['sampling_rate']).input_values[0]
         batch["input_length"] = len(batch["input_values"])
 
@@ -279,8 +262,7 @@ class Wav2Vec2ASR:
             dataset = Dataset.from_pandas(df)
             df.to_json(dataset_file.replace('wav', 'preparedWav'))
 
-        return
-
+        return dataset
 
     def setModel(self, model: str):
         if self.processor is None:
@@ -291,9 +273,6 @@ class Wav2Vec2ASR:
             ctc_loss_reduction="mean",
             pad_token_id=self.processor.tokenizer.pad_token_id
         )
-
-    def processorFromPretrained(self, processor):
-        self.processor = Wav2Vec2ProcessorWithLM.from_pretrained(processor)
 
     def createProcessor(self, ngram, tokenizer: Wav2Vec2CTCTokenizer, featureExtractor: Wav2Vec2FeatureExtractor,
                         vocab: list = None, ):
@@ -330,31 +309,36 @@ class Wav2Vec2ASR:
             self.usingLM = False
 
         if torch.cuda.is_available() and self.use_cuda:
-            # print(torch.cuda.current_device())
-            # print('Before loading model\n', torch.cuda.memory_summary(abbreviated=True))
             self.model = Wav2Vec2ForCTC.from_pretrained(location,
                                                         ctc_loss_reduction="mean",
                                                         pad_token_id=self.processor.tokenizer.pad_token_id).to("cuda:0")
-            # print('After loading model\n', torch.cuda.memory_summary(abbreviated=True))
         else:
             self.model = Wav2Vec2ForCTC.from_pretrained(location,
                                                         ctc_loss_reduction="mean",
                                                         pad_token_id=self.processor.tokenizer.pad_token_id)
 
 
-
 if __name__ == "__main__":
     run_cuda_setup()
     # example use case
     # model = "patrickvonplaten/wav2vec2-base-100h-with-lm"
-    model = "facebook/wav2vec2-large-960h-lv60-self"
+    # model = "facebook/wav2vec2-large-960h-lv60-self"
+    # model = "facebook/wav2vec2-large-960h"
+    # model = "./Data/Models/HFTest20epochs"
+    # model = "./Data/Models/HFTest"
+    model = "./Data/Models/wav2vec2-large-960h_10Epochs"
+    # model = "caurdy/wav2vec2-large-960h-lv60-self_MIDIARIES_72H_FT"
     asr_model = Wav2Vec2ASR(use_cuda=True)
     asr_model.loadModel(model)
 
-    asr_model.train('../Data/wav2vec2trainUnder10000KB.json', '../Data/wav2vec2testUnder10000KB.json', '../Data/', 3)
-    #filename = "../assets/AbbottCostelloWhosonFirst_30.wav"
-    #transcript, _ = asr_model.predict(filename)
-    #basePath = os.path.dirname(os.path.abspath(__file__))
-    asr_model.saveModel("Data/Models/HFTest/")
-    #with open("hftest.txt", 'w') as output:
-        #output.write(transcript)
+    # asr_model.train('../Data/preparedWav2vec2trainUnder20000KB.json',
+    #                 '../Data/preparedWav2vec2trainUnder10000KB.json',
+    #                 '../Data/',
+    #                 10)
+    asr_model.evaluate("../Data/wav2vec2trainUnder10000KB.json")
+    # filename = "../assets/AbbottCostelloWhosonFirst_30.wav"
+    # transcript, _ = asr_model.predict(filename)
+    # basePath = os.path.dirname(os.path.abspath(__file__))
+    # asr_model.saveModel("Data/Models/wav2vec2-large-960h_10Epochs")
+    # with open("hftest.txt", 'w') as output:
+    #     output.write(transcript)

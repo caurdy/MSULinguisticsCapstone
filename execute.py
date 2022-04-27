@@ -46,18 +46,17 @@ def main():
     elif sys.argv[1] == "-m":
         # create new asr huggingface model
         if sys.argv[2] == "-a":
-            if not isfile(sys.argv[3]):
+            if not isfile(sys.argv[3]) or not isfile(sys.argv[4]):
                 print("Error: This folder path doesn't exit. Please check if the path is right.")
                 return
             print("Creating new ASR Huggingface model")
             asr_model = Wav2Vec2ASR()
-            asr_model.loadModel(sys.argv[4])
-            print(sys.argv[3])
+            asr_model.loadModel(sys.argv[5])
             epo = 30
-            if len(sys.argv) > 6:
-                epo = int(sys.argv[6])
+            if len(sys.argv) > 7:
+                epo = int(sys.argv[7])
             asr_model.train(sys.argv[3], sys.argv[4], '../Data/', num_epochs=epo)
-            asr_model.saveModel(f"./Data/Models/ASR/{sys.argv[5]}")
+            asr_model.saveModel(f"./Data/Models/ASR/{sys.argv[6]}")
             print("New asr model is created")
 
         # create new diarization model

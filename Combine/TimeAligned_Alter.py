@@ -45,7 +45,7 @@ class ASRTimeAligner:
     """
     __slots__ = ['asrModel', 'diarizationModel', 'punctuationModel', 'nerModel', 'transcripts', 'useCuda']
 
-    def __init__(self, asrModel="facebook/wav2vec2-large-960h-lv60-self",
+    def __init__(self, asrModel="caurdy/wav2vec2-large-960h-lv60-self_MIDIARIES_72H_FT",
                  diarizationModelPath="./Data/Models/Diarization/model_03_25_2022_10_38_52",
                  punctuationModel=None,
                  nerModel=None,
