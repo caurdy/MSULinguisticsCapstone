@@ -190,7 +190,7 @@ def thePunctuator(clicks):
     if clicks > 0:
 
         #transcripts, punc_time, ner_time = timeAligner.getEntitiesLastTranscript()
-        with open('../assets/AbbottCostelloWhosonFirst.json') as jsonFile:
+        with open('assets/AbbottCostelloWhosonFirst.json') as jsonFile:
             transcripts = json.load(jsonFile)
 
         return html.Div([
