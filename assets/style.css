@@ -39,12 +39,17 @@
     visibility: visible;
     margin-top: 50%;
     margin-left: 30%;
+    font-style: oblique;
+    font-weight: bold;
+    font-size: 25px;
 }
 
 .dash-spinner {
   background-image: url("https://raw.githubusercontent.com/julienc91/react-countdown360/master/doc/02_stylized_countdown.gif");
   background-size: contain;
   background-repeat: no-repeat;
+  animation-duration: 10s;
+    margin-top: 20%;
 }
 
 .dash-spinner * {
