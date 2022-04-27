@@ -153,7 +153,7 @@ Let's try using the transcribing feature first.
 
 			2.1) "-t" after image name is the tag to choose transcription feature to run. 
 			2.2) Default ASR model and Diarization model it uses are the below
-				ASR Model: facebook/wav2vec2-large-960h-lv60-self
+				ASR Model: caurdy/wav2vec2-large-960h-lv60-self_MIDIARIES_72H_FT
 				Diarization Model: ./Data/Models/Diarization/model_03_25_2022_10_38_52
 		
 		3.) If you want to specify ASR model and/or Diarization model to use, add asr model and diarization model in that order after the audio file path.
