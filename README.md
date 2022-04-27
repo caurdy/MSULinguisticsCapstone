@@ -1,7 +1,7 @@
-# MSULinguisticsCapstone
+# MSULinguisticsCapstone #
 An open source Automatic Speech Recognition + Time Alignment software for translating .wav files into formatted text files for linguistics research.
 
-##Installation
+## Installation ##
 ### Conda Environment ###
 
 Requires Anaconda or Miniconda
@@ -153,7 +153,7 @@ Let's try using the transcribing feature first.
 
 			2.1) "-t" after image name is the tag to choose transcription feature to run. 
 			2.2) Default ASR model and Diarization model it uses are the below
-				ASR Model: facebook/wav2vec2-large-960h-lv60-self
+				ASR Model: caurdy/wav2vec2-large-960h-lv60-self_MIDIARIES_72H_FT
 				Diarization Model: ./Data/Models/Diarization/model_03_25_2022_10_38_52
 		
 		3.) If you want to specify ASR model and/or Diarization model to use, add asr model and diarization model in that order after the audio file path.
@@ -251,7 +251,117 @@ There are two scripts needed to fine-tune a model. dataConfig.py and SpeechToTex
 
 ## Automatic Speech Recognition ##
 
-Maria's txt 
+### Setup ###
+
+This model requires two pieces to operate
+
+1. **The Wav2Vec2ForCTC model:** This piece takes in the audio data from a wav file and predicts what sounds it could be according to information it's stored from training.
+	
+		
+2. **The Wav2Vec2ProcessorWithLM:** This piece both extracts the features necessary for prediction from your audio sample as well as decodes the output that the model predicts from a series of tokens into actual letters.
+
+These two pieces can be set in a number of ways on an instantiated Wav2Vec2ASR object.
+
+Let's say that we have instantiated our model as
+	
+	example_model = Wav2Vec2ASR()
+
+
+We can set the above pieces in one of three ways. For each option you can use either a model from HuggingFace's repository 
+(found [here](URL "https://huggingface.co/models?pipeline_tag=automatic-speech-recognition&sort=downloads&search=lm")) or a location of a file on your personal machine
+
+1. **Provide both pieces at once**
+		
+    To do this, we simply call the function loadModel()
+    
+    		example_model.loadModel("patrickvonplaten/wav2vec2-base-100h-with-lm")
+		
+2. **Provide them separately with a pretrained processor**
+	To set the model part we can use setModel() and then we can use processorFromPretrained() to set the processor from a different location. 
+	This allows us to use more base models that don't have a Wav2Vec2ProcessorWithLM trained with them.
+	
+		example_model.setModel("facebook/wav2vec2-base-960h")
+		example_model.processorFromPretrained("patrickvonplaten/wav2vec2-base-100h-with-lm")
+			
+
+3. **Provide them separately with a language model base.**
+		
+	Should you have an n-gram model for your language of choice that you'd like to create a processor from, you can do so using the createProcessor() method
+		
+	For this method, you will need to create a Wav2Vec2CTCTokenizer, a Wav2Vec2FeatureExtractor, and an n-gram Model
+	
+		example_tokenizer = Wav2Vec2CTCTokenizer('vocab.json', unk_token='[UNK]', pad_token='[PAD]',word_delimeter_token='|')
+		example_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0, do_normalize=True, return_attention_mask=False)
+		example_ngram = "local_n_gram"
+		example_model.createProcessor(example_ngram, example_tokenizer, example_extractor)
+		
+	You can still set the model via:
+		example_model.setModel("facebook/wav2vec2-base-960h")
+		
+**Some questions you may still have:**
+			
+1. What is an n-gram model?
+
+    An n-gram model is a language model trained on a data set that helps predict what patterns are associated with what sounds. For more instructions on how to make your own, here are some external resources: [link 1](URL "https://huggingface.co/blog/wav2vec2-with-ngram#3-build-an-n-gram-with-kenlm")  [link 2](URL "https://masatohagiwara.net/training-an-n-gram-language-model-and-estimating-sentence-probability.html")
+	
+2. What is the Wav2Vec2CTCTokenizer?
+				
+	The tokenizer object turns the audio input into a series of tokens for later translation. 
+	In order to do this, it requires:
+		- A vocabulary file of all the characters it should recognize. 
+		- The "unk_token" is the unknown token, or what to set something to if it doesn't recognize it. 
+		- The "pad_token" is the padding token, or what it should use to pad things of mismatched length 
+
+	For more insight on generating these things, please look [here](URL "https://huggingface.co/blog/fine-tune-wav2vec2-english#create-wav2vec2ctctokenizer") 
+		
+3. What is the Wav2Vec2FeatureExtractor?
+
+	The feature extractor object extracts all the necessary information from each audio sample that it can then use for prediction. There are no external files, but to learn more about what each of the parameters do you can take a look [here](URL "https://huggingface.co/docs/transformers/model_doc/wav2vec2#transformers.Wav2Vec2FeatureExtractor") 
+
+### Prediction: ###
+
+Once the model and processor are set, you can begin to transcribe your audio! To do so you need your audio file to be a .wav file
+	
+	example_audio = "test.wav"`
+
+After this, all you have to do is call the predict() method
+	
+	transcription, confidence = example_model.predict(audioPath=example_audio)`
+
+If you have already gotten your audio array via librosa.load() (found [here](URL "https://librosa.org/doc/latest/generated/librosa.load.html"))
+
+	example_audio = librosa.load(example_audio, sr=16000)
+	transcription, confidence = example_model.predict(audioArray=example_audio)
+
+The "transcription" is the string text that resulted from the speech input, and the confidence is the confidence interval the model has that the transcription is correct.
+
+### Training: ###
+
+To train this model, you need to set the base model and processor using the above instructions. After this, you will need a training set, a testing set, and an output directory.
+	
+For both the training set and the testing set, you will need two .json files with identical format
+	
+For every audio input in the dataset, there should be the processed wav file (the output from librosa.load() ) under the tag “audio” and the labeled transcript under the label “text”. 
+The transcript should be lowercase with all punctuation except apostrophes. 
+For example (note: this example file does not contain valid data):
+		
+		{“text”:{“0”: "According to all known laws of aviation, there is no way a bee should be able to fly."},
+    		“audio”:{“0”: [0.0,0.0,0.0,0.0,-0.0000610352,0.0,-0.0000610352,0.0000305176,-0.0001525879,0.0001220703,
+		-0.000213623,0.0002441406,-0.0003967285,0.0005187988,-0.0010070801,0.0036621094,0.0098266602,
+		0.0093078613,0.009765625,0.008605957,0.0099182129,0.0062561035,0.0065307617,0.0067443848,0.00390625,
+		0.0025939941,0.003692627,-0.0018615723,0.005279541,]}}
+
+After this, training can be accomplished via
+
+	example_model.train("train_set.json", "test_set.json", "/testOutput/", epochs=30)
+
+The number of epochs is the number of layers for training. The higher numbers of epochs generally produce better results. However, if you would like training to be less heavy, you can change the amount of epochs to whatever you would like.
+	
+After training is complete, the model and processor pieces of your example_odel object will have changed. To save these changes, we call the saveModel() method with the location where we'd like to save.
+
+	example_model.saveModel("outputlocation/")
+
+This way you don't lose the results of training and can use them for future predictions.
 
 ## Speaker Diarization ##
 
