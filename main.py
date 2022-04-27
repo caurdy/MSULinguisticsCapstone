@@ -106,6 +106,7 @@ app.layout = html.Div([
     dcc.Store(id='archive-size'),
     dcc.Store(id='record-clicks'),
     dcc.Store(id='language', data=""),
+    dcc.Store(id='model-save', data=""),
 ])
 
 

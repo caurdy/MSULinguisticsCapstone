@@ -34,7 +34,8 @@ num_epochs = 3
 new_diary_model = ""
 
 english = "facebook/wav2vec2-large-960h-lv60-self"
-spanish = "patrickvonplaten/wav2vec2-large-xlsr-53-jacob-with-lm"
+# jacob = "patrickvonplaten/wav2vec2-large-xlsr-53-jacob-with-lm"
+jacob = "caurdy/wav2vec2-large-960h-lv60-self_MIDIARIES_72H_FT"
 # current_model_asr = "English, trained on 01/21/22"
 current_model_asr = ""
 current_model_diarization = "Diarization iteration 02, trained on 01/21/22"
@@ -83,8 +84,7 @@ layout = html.Div([
     html.Hr(),
 
     html.Div(id='model_set', children=[html.Div(f"Current ASR Model: {current_model_asr}", id="asr-button-output"),
-                                       html.Div(f"Current Diarization Model: {current_model_diarization}",
-                                                id="dia-button-output")]),
+                                       ]),
 
     html.Hr(),
 
@@ -305,22 +305,29 @@ def saveDiaryModel(input, submit, options):
 
 @app.callback(Output('asr-button-output', 'children'),
               Output('language', 'data'),
+              Output('model-save', 'data'),
               Input('model1asr', 'n_clicks'),
               Input('model2asr', 'n_clicks'),
-              State('language', 'data'))
-def parse_contents(mod1, mod2, model):
+              State('language', 'data'),
+              State('model-save', 'data'))
+def parse_contents(mod1, mod2, model, selected):
     global current_model_asr
+    if selected != "":
+        current_model_asr = selected
+    else:
+        current_model_asr = f"Jacob\'s, trained on 4/1/22"
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-    if 'model1asr' in changed_id:
-        current_model_asr = f'English, loaded in on 01/21/22'
+    if 'model1asr' in changed_id and mod1 > 0:
+        current_model_asr = f"English, loaded in on 1/21/22"
         model = 'english'
-    elif 'model2asr' in changed_id:
-        current_model_asr = f'Jacob\'s, trained on 04/01/22'
+    elif 'model2asr' in changed_id and mod2 > 0:
+        current_model_asr = f"Jacob\'s, trained on 4/1/22"
         model = 'jacob'
+    selected = model
 
     return html.Div([
         html.H5(f"Current ASR Model: {current_model_asr}")
-    ]), model
+    ]), model, selected
 
 
 # @app.callback(Output('dia-button-output', 'children'),
