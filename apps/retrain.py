@@ -28,8 +28,8 @@ du.configure_upload(app, 'assets/TrainingData/', use_upload_id=False)
 progress_queue = Queue(1)
 progress_memory = 0
 base_model_string = "patrickvonplaten/wav2vec2-base-100h-with-lm"
-data_file = "../Data/correctedShort.json"
-output_dir = "/assets/asr_models/"
+data_file = "~/Documents/Beta/Data/correctedShort.json"
+output_dir = "~/Documents/Beta/Data/asr_models/"
 num_epochs = 3
 new_diary_model = ""
 
@@ -51,22 +51,6 @@ layout = html.Div([
     # HINT
 
     html.Hr(),
-
-    # dbc.DropdownMenu(
-    # label="Menu",
-    # children=[
-    #     dbc.DropdownMenu(
-    #     children=[
-    #         dbc.DropdownMenuItem("Item 1"),
-    #         dbc.DropdownMenuItem("Item 2"),
-    #     ],
-    #     ),
-    #     dbc.DropdownMenuItem("Item 2"),
-    #     dbc.DropdownMenuItem("Item 3"),
-    # ],
-    # ))
-
-    # dcc.Upload(html.A('Upload File')),
 
     dcc.Dropdown(['Speech to Text', 'Diarization'], id='asr-dropdown',
                  style={'display': 'inline-block', 'width': '90%'}),
@@ -93,12 +77,6 @@ layout = html.Div([
                                                                   n_clicks=0)),
                        html.Div(html.Button("Trained_Model_04_01_22", id='model2asr', n_clicks=0))],
              style={'margin': '20px'}),
-    # html.Hr(),
-    # html.Div(id="col_di", n_clicks=0, title="Speaker Diarization Models",
-    #          children=["Speaker Diarization", html.Div(html.Button("Diarization_01_21_22", id='model1dia', n_clicks=0)),
-    #                    html.Div(html.Button("Diarization_02_02_22", id='model2dia', n_clicks=0))],
-    #          style={'margin': '20px'}),
-    # html.Hr(),
 
 ],
     style={'margin-left': '300px'})
@@ -122,9 +100,11 @@ def update_output(value):
     else:
         if value == 'Speech to Text':
             # return asrtrain.layout
-            return html.Div([html.H4("Select a Base Model or Upload a model"),
+            return html.Div([html.H4("Select a Base Model or Provide a Hugging Face Model String"),
                              html.Hr(),
-                             dcc.Dropdown(['Name-1', 'HuggingFace'], id='speech-dropdown'),
+                             dcc.Dropdown(['Base_Model_untrained_01_21_22', 'Trained_Model_04_01_22'], id='speech-dropdown'),
+                             html.Hr(),
+                             dcc.Input(id="hf_input", type="text", placeholder="Insert a Hugging Face Model"),
                              html.Hr(),
                              dcc.Upload(
                                  id='speech-model',
@@ -174,27 +154,6 @@ def update_output(value):
                      filetypes=['rttm', 'txt', 'uem', '.wav', 'zip'],
                      id='upload-files',
 
-                     # children=html.Div([
-                     #     html.Button(id="diarytrainButt", children=[
-                     #         'Drag and Drop or ',
-                     #         html.A('Select a Folder'), ], n_clicks=0,
-                     #                 style={
-                     #                     'width': '100%',
-                     #                     'height': '60px',
-                     #                     'lineHeight': '60px',
-                     #                     'borderWidth': '1px',
-                     #                     'borderStyle': 'dashed',
-                     #                     'borderRadius': '5px',
-                     #                     'textAlign': 'center',
-                     #                     'margin': '10px',
-                     #                     # 'margin-left': '300px',
-                     #                 }, )
-                     #
-                     # ]),
-                     #
-                     # # Allow multiple files to be uploaded
-                     # multiple=True,
-                     # style={'margin-left': '300px'}
                  ),
                  html.Button('Start Training the Model', id='diary-train', n_clicks=0),
                  html.Div(id='diary-input', children=[]),
@@ -206,20 +165,28 @@ def update_output(value):
 
 @app.callback(Output('speech-output', 'children'),
               Output('speech-dropdown', 'options'),
+              Input('hf_input', 'value'),
               Input('speech-dropdown', 'value'),
               Input('speech-model', 'contents'),
               Input('start-work', 'n_clicks'),  # Use N_clicks to reDraw and name displayed Models
               State('speech-model', 'filename'),
               State('speech-dropdown', 'options'),  # Use to append item to the dropdown
               prevent_initial_callback=True, )
-def selectModel(value, contents, clicks, filename, dropdown_options):
+def selectModel(hf_input, value, contents, clicks, filename, dropdown_options):
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
     # if contents is not None and value is not None:
     if clicks > 0:
         try:
+            if hf_input != "Insert a Hugging Face Model":
+                base_model_string = hf_input
+            elif value == "Trained_Model_04_01_22":
+                base_model_string = jacob
+            else:
+                base_model_string = english
             asr_model = Wav2Vec2ASR(use_cuda=True)
             asr_model.loadModel(base_model_string)
-            asr_model.train(base_model_string, data_file, output_dir)
+            asr_model.train(data_file, data_file, output_dir, num_epochs=3)
+            asr_model.saveModel("../assets/asr_models/modelExample")
             return [], dropdown_options
             # dropdown_options.append(f'MyModel{clicks}')
             # return html.Div(html.H5(f'Speech Model set to MyModel{clicks}')), dropdown_options
@@ -315,13 +282,13 @@ def parse_contents(mod1, mod2, model, selected):
     if selected != "":
         current_model_asr = selected
     else:
-        current_model_asr = f"Jacob\'s, trained on 4/1/22"
+        current_model_asr = f"Training iteration 01, trained on 4/1/22"
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
     if 'model1asr' in changed_id and mod1 > 0:
-        current_model_asr = f"English, loaded in on 1/21/22"
+        current_model_asr = f"English Base, loaded in on 1/21/22"
         model = 'english'
     elif 'model2asr' in changed_id and mod2 > 0:
-        current_model_asr = f"Jacob\'s, trained on 4/1/22"
+        current_model_asr = f"Training iteration 01, trained on 4/1/22"
         model = 'jacob'
     selected = model
 
