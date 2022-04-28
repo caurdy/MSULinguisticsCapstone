@@ -22,7 +22,7 @@ def softmax(logits):
 
 
 def getTranscript(audio, model, processor):
-    input_values = processor(torch.tensor(audio), sampling_rate=16000, return_tensors="pt", padding=True).input_values
+    input_values = processor(audio, sampling_rate=16000, return_tensors="pt").input_values
     logits = model(input_values).logits
     probs = softmax_torch(logits)
     max_probs = torch.max(probs, dim=-1)[0]
@@ -41,42 +41,18 @@ def testWER(transcription: str, label_file: str):
 
 
 if __name__ == "__main__":
-    tokenizer = Wav2Vec2CTCTokenizer.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
-    model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
-    feature_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0,
-                                                 do_normalize=True, return_attention_mask=False)
-    processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
-    # RPUNCT = rpunct.RestorePuncts()
+    #processor = Wav2Vec2Processor.from_pretrained("caurdy/wav2vec2-large-960h-lv60-self_MIDIARIES_72H_FT")
+    #model = Wav2Vec2ForCTC.from_pretrained("caurdy/wav2vec2-large-960h-lv60-self_MIDIARIES_72H_FT")
+    #audio_file = "../../test.wav"
+    #audio, _ = librosa.load(audio_file, 16000)
+    #transcript, confidence = getTranscript(audio, model, processor)
+    with open("hannahlofts.txt", "r") as cleanREAD :
+        with open("hannahloftsGOOGLE.txt", "r") as googleread:
+            clean = cleanREAD.readline()
+            google = googleread.readline().upper()
+            print(clean)
+            print(google)
+            print(jiwer.wer(clean, google))
 
-    # random one, needed something with a transcription file
-    file_name1 = r"../Data/wav/0bb5bcb5-4688-42d5-8c4d-01170bce5f63.wav"
 
-    # 30 sec clip - male college
-    file_name2 = r"../Data/wav/780cbc91-6131-41f0-9088-a3ddae83877c.wav"
-    # 1 min clip - female 16-24 age range
-    file_name3 = r"../Data/wav/c3fc8885-6500-4203-9cd0-03771b001a91.wav"
 
-    label_1 = r"../Data/Transcripts/0bb5bcb5-4688-42d5-8c4d-01170bce5f63.txt"
-    label_2 = r"../Data/Transcripts/780cbc91-6131-41f0-9088-a3ddae83877c.txt"
-    label_3 = r"../Data/Transcripts/c3fc8885-6500-4203-9cd0-03771b001a91.txt"
-
-    files_dict = {file_name2: label_2, file_name3: label_3}
-    output_file = "toy_data_set.txt"
-    i = 1
-    results_file = open(output_file, "w")
-    for file, label in files_dict.items():
-        results_file.write(f"File {i}\n\n")
-        i += 1
-
-        input_audio, _ = librosa.load(file, sr=16000)
-        start = time.time()
-        transcript = getTranscript(input_audio, model, processor)
-        end = time.time()
-
-        results_file.write(f"Prediction: {transcript}\n")
-        target, wer = testWER(transcript, label)
-        results_file.write(f"Target:     {target}\n")
-        results_file.write(f"WER: {wer}\n")
-        results_file.write(f"Time: {end - start}\n")
-        break
-    results_file.close()
