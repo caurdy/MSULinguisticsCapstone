@@ -1,5 +1,5 @@
 import sys
-from Combine.TimeAligned_Alter import ASRTimeAligner
+from Combine.generateTranscription import ASRTimeAligner
 from DataScience.SpeechToTextHF import Wav2Vec2ASR
 from PyannoteProj.TestPipline import SpeakerDiaImplement
 from os.path import isfile, isdir

@@ -192,8 +192,8 @@ There are two different model you can retrain: ASR model and Diarization model.
 		2.) Make sure that the prepared data is soemwhere inside the parent directory of where the software is located.
 
 		3.) Run run command with specific arguments listed below to call retraining Dairization model feature.
-			- docker run -v ${pwd}:/usr/src/app -m -d [diarization model to retrain] [epoch number] [Where to save the model]
-			e.g. docker run -v ${pwd}:/usr/src/app -m -d ./Data/Models/Diarization/model_03_25_2022_10_38_52 30 ./Data/Models/Diarization
+			- docker run -v ${pwd}:/usr/src/app [name of the image] -m -d [diarization model to retrain] [epoch number] [Where to save the model]
+			e.g. docker run -v ${pwd}:/usr/src/app asrpipeline -m -d ./Data/Models/Diarization/model_03_25_2022_10_38_52 30 ./Data/Models/Diarization
 
 			3.1) -m tag determine that you are using retraining model feature.
 			3.2) -d tag determine that you are retraining diarization model.
@@ -245,10 +245,32 @@ There are two scripts needed to fine-tune a model. dataConfig.py and SpeechToTex
    3. **Audio (.wav) Directory**
    4. **Num Epochs**
 
-#### 3. Training a new fine-tuned model (Speaker Diarization) ####
+#### 3. Training a new fine-tuned model ####
+***Make sure that Docker is installed.***
+1. Open Terminal and navigate to the directory where you save this software using cd command.
+   1. e.g. cd directory/where/you/saved/this
+2. Call build command to build docker image.
+   1. docker build -t asrpipeline .
+      1. If docker is already built, you can skip this.
+3. Call run command to run docker image and retrain the model.
+   1. For ASR model
+      1. docker run -v ${pwd}:/usr/src/app asrpipeline -m -a ./Data/Retrain/ASR/ASRTraining.json ./Data/ASRTesting.json facebook/wav2vec2-large-960h-lv60-self facebook_fineTune_test 30
+   2. For Diarization model
+      1. docker run -v ${pwd}:/usr/src/app asrpipeline -m -d ./Data/Models/Diarization/model_03_25_2022_10_38_52 30 ./Data/Models/Diarization
+For more detail, please check Docker section above.
 
 #### 4. Using a fine-tuned model ####
-
+***Make sure that Docker is installed.***
+1. Open Terminal and navigate to the directory where you save this software using cd command.
+   1. e.g. cd directory/where/you/saved/this
+2. Call build command to build docker image.
+   1. docker build -t asrpipeline .
+      1. If docker is already built, you can skip this.
+3. Call run command to run docker image and transcribe an audio file using the new model.
+   1. docker run -v ${pwd}:/usr/src/app asrpipeline -t ./Data/Audio/Atest.wav caurdy/wav2vec2-large-960h-lv60-self_MIDIARIES_72H_FT ./PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52
+      1. "caurdy/wav2vec2-large-960h-lv60-self_MIDIARIES_72H_FT" can be replaced with other ASR models.
+      2. "./PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52" can be replaced with other Diarization models.
+   
 ## Automatic Speech Recognition ##
 
 ### Setup ###
@@ -485,3 +507,59 @@ This way you don't lose the results of training and can use them for future pred
 
    Optimizing hyperparameters is a very time-consuming process. However, the hyperparameters do not need to be changed. 
    However, if this process is necessary, it is recommended that the optimization be done with a computer powered by a gpu.
+
+
+## Named Entity Recognition ##
+**What is Named Entity Recognition?**
+
+- It is a task of identifying information in a text, especially proper nouns, and categorizing them into multiple different types.
+
+**How to use**
+- Import ner from NamedEntityRecognition.ner
+  - ner.py is a python file under NamedEntityRecognition directory.
+- Whenever you want to find Named Entity in a text, call the function "ner(String Object)".
+
+      e.g. nerOutput = ner("My name is Johnson");
+
+  - Currently, the function ner is using a model called "dslim/bert-base-NER"
+    - If you want to use different model, please follow below to initialize the model and use it.
+
+            from transformers import AutoTokenizer, AutoModelForTokenClassification
+            from transformers import pipeline
+
+            tokenizer = AutoTokenizer.from_pretrained("dslim/bert-base-NER")
+            model = AutoModelForTokenClassification.from_pretrained("dslim/bert-base-NER")
+
+            nlp = pipeline("ner", model=model, tokenizer=tokenizer)
+            example = "My name is Wolfgang and I live in Berlin"
+
+            ner_results = nlp(example)
+            print(ner_results)
+      More Information on this link https://huggingface.co/dslim/bert-base-NER.
+
+
+- The output of the function would look something like this
+
+      entity': 'B-PER', 'score': 0.9987759, 'index': 5, 'word': 'Johnson', 'start': 10, 'end': 17
+- Table below shows the entity categories, describing what each abbreviation stands for.
+
+| Abbreviation | Description                                                                  |
+|--------------|------------------------------------------------------------------------------|
+| O            | Outside of a named entity                                                    |
+| B-MIS        | Beginning of a miscellaneous entity right after another miscellaneous entity |
+| I-MIS        | Miscellaneous entity                                                         |
+| B-PER        | Beginning of a person’s name right after another person’s name               |
+| I-PER        | Person’s name                                                                |
+| B-ORG        | Beginning of an organization right after another organization                |
+| I-ORG        | Organization                                                                 |
+| B-LOC        | Beginning of a location right after another location                         |
+| I-LOC        | Location                                                                     |
+
+
+Named Entity Recognition is implemented when transcribing the audio file by default, but if you want to not use it, please follow the direction below.
+  1. Open generateTranscription.py in Combine directory.
+  2. Go to line 122 where it says "namedEntity = ner(punc_restore)"
+  3. Delete that line.
+  4. Go to line 128 (line 129 before deleting the line above) where it says ""Named Entity": str(namedEntity)".
+  5. Delete the line and delete the comma on line 127.
+  6. Now, your transcription won't have a named entity recognition result.
