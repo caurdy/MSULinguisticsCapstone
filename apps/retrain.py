@@ -28,13 +28,14 @@ du.configure_upload(app, 'assets/TrainingData/', use_upload_id=False)
 progress_queue = Queue(1)
 progress_memory = 0
 base_model_string = "patrickvonplaten/wav2vec2-base-100h-with-lm"
-data_file = "../Data/correctedShort.json"
-output_dir = "/assets/asr_models/"
+data_file = "~/Documents/Beta/Data/correctedShort.json"
+output_dir = "~/Documents/Beta/Data/asr_models/"
 num_epochs = 3
 new_diary_model = ""
 
 english = "facebook/wav2vec2-large-960h-lv60-self"
-spanish = "patrickvonplaten/wav2vec2-large-xlsr-53-jacob-with-lm"
+# jacob = "patrickvonplaten/wav2vec2-large-xlsr-53-jacob-with-lm"
+jacob = "caurdy/wav2vec2-large-960h-lv60-self_MIDIARIES_72H_FT"
 # current_model_asr = "English, trained on 01/21/22"
 current_model_asr = ""
 current_model_diarization = "Diarization iteration 02, trained on 01/21/22"
@@ -50,22 +51,6 @@ layout = html.Div([
     # HINT
 
     html.Hr(),
-
-    # dbc.DropdownMenu(
-    # label="Menu",
-    # children=[
-    #     dbc.DropdownMenu(
-    #     children=[
-    #         dbc.DropdownMenuItem("Item 1"),
-    #         dbc.DropdownMenuItem("Item 2"),
-    #     ],
-    #     ),
-    #     dbc.DropdownMenuItem("Item 2"),
-    #     dbc.DropdownMenuItem("Item 3"),
-    # ],
-    # ))
-
-    # dcc.Upload(html.A('Upload File')),
 
     dcc.Dropdown(['Speech to Text', 'Diarization'], id='asr-dropdown',
                  style={'display': 'inline-block', 'width': '90%'}),
@@ -83,8 +68,7 @@ layout = html.Div([
     html.Hr(),
 
     html.Div(id='model_set', children=[html.Div(f"Current ASR Model: {current_model_asr}", id="asr-button-output"),
-                                       html.Div(f"Current Diarization Model: {current_model_diarization}",
-                                                id="dia-button-output")]),
+                                       ]),
 
     html.Hr(),
 
@@ -93,12 +77,6 @@ layout = html.Div([
                                                                   n_clicks=0)),
                        html.Div(html.Button("Trained_Model_04_01_22", id='model2asr', n_clicks=0))],
              style={'margin': '20px'}),
-    # html.Hr(),
-    # html.Div(id="col_di", n_clicks=0, title="Speaker Diarization Models",
-    #          children=["Speaker Diarization", html.Div(html.Button("Diarization_01_21_22", id='model1dia', n_clicks=0)),
-    #                    html.Div(html.Button("Diarization_02_02_22", id='model2dia', n_clicks=0))],
-    #          style={'margin': '20px'}),
-    # html.Hr(),
 
 ],
     style={'margin-left': '300px'})
@@ -122,9 +100,11 @@ def update_output(value):
     else:
         if value == 'Speech to Text':
             # return asrtrain.layout
-            return html.Div([html.H4("Select a Base Model or Upload a model"),
+            return html.Div([html.H4("Select a Base Model or Provide a Hugging Face Model String"),
                              html.Hr(),
-                             dcc.Dropdown(['Name-1', 'HuggingFace'], id='speech-dropdown'),
+                             dcc.Dropdown(['Base_Model_untrained_01_21_22', 'Trained_Model_04_01_22'], id='speech-dropdown'),
+                             html.Hr(),
+                             dcc.Input(id="hf_input", type="text", placeholder="Insert a Hugging Face Model"),
                              html.Hr(),
                              dcc.Upload(
                                  id='speech-model',
@@ -174,27 +154,6 @@ def update_output(value):
                      filetypes=['rttm', 'txt', 'uem', '.wav', 'zip'],
                      id='upload-files',
 
-                     # children=html.Div([
-                     #     html.Button(id="diarytrainButt", children=[
-                     #         'Drag and Drop or ',
-                     #         html.A('Select a Folder'), ], n_clicks=0,
-                     #                 style={
-                     #                     'width': '100%',
-                     #                     'height': '60px',
-                     #                     'lineHeight': '60px',
-                     #                     'borderWidth': '1px',
-                     #                     'borderStyle': 'dashed',
-                     #                     'borderRadius': '5px',
-                     #                     'textAlign': 'center',
-                     #                     'margin': '10px',
-                     #                     # 'margin-left': '300px',
-                     #                 }, )
-                     #
-                     # ]),
-                     #
-                     # # Allow multiple files to be uploaded
-                     # multiple=True,
-                     # style={'margin-left': '300px'}
                  ),
                  html.Button('Start Training the Model', id='diary-train', n_clicks=0),
                  html.Div(id='diary-input', children=[]),
@@ -206,20 +165,28 @@ def update_output(value):
 
 @app.callback(Output('speech-output', 'children'),
               Output('speech-dropdown', 'options'),
+              Input('hf_input', 'value'),
               Input('speech-dropdown', 'value'),
               Input('speech-model', 'contents'),
               Input('start-work', 'n_clicks'),  # Use N_clicks to reDraw and name displayed Models
               State('speech-model', 'filename'),
               State('speech-dropdown', 'options'),  # Use to append item to the dropdown
               prevent_initial_callback=True, )
-def selectModel(value, contents, clicks, filename, dropdown_options):
+def selectModel(hf_input, value, contents, clicks, filename, dropdown_options):
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
     # if contents is not None and value is not None:
     if clicks > 0:
         try:
+            if hf_input != "Insert a Hugging Face Model":
+                base_model_string = hf_input
+            elif value == "Trained_Model_04_01_22":
+                base_model_string = jacob
+            else:
+                base_model_string = english
             asr_model = Wav2Vec2ASR(use_cuda=True)
             asr_model.loadModel(base_model_string)
-            asr_model.train(base_model_string, data_file, output_dir)
+            asr_model.train(data_file, data_file, output_dir, num_epochs=3)
+            asr_model.saveModel("../assets/asr_models/modelExample")
             return [], dropdown_options
             # dropdown_options.append(f'MyModel{clicks}')
             # return html.Div(html.H5(f'Speech Model set to MyModel{clicks}')), dropdown_options
@@ -305,99 +272,26 @@ def saveDiaryModel(input, submit, options):
 
 @app.callback(Output('asr-button-output', 'children'),
               Output('language', 'data'),
+              Output('model-save', 'data'),
               Input('model1asr', 'n_clicks'),
               Input('model2asr', 'n_clicks'),
-              State('language', 'data'))
-def parse_contents(mod1, mod2, model):
+              State('language', 'data'),
+              State('model-save', 'data'))
+def parse_contents(mod1, mod2, model, selected):
     global current_model_asr
+    if selected != "":
+        current_model_asr = selected
+    else:
+        current_model_asr = f"Training iteration 01, trained on 4/1/22"
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-    if 'model1asr' in changed_id:
-        current_model_asr = f'English, loaded in on 01/21/22'
+    if 'model1asr' in changed_id and mod1 > 0:
+        current_model_asr = f"English Base, loaded in on 1/21/22"
         model = 'english'
-    elif 'model2asr' in changed_id:
-        current_model_asr = f'Jacob\'s, trained on 04/01/22'
+    elif 'model2asr' in changed_id and mod2 > 0:
+        current_model_asr = f"Training iteration 01, trained on 4/1/22"
         model = 'jacob'
+    selected = model
 
     return html.Div([
         html.H5(f"Current ASR Model: {current_model_asr}")
-    ]), model
-
-
-# @app.callback(Output('dia-button-output', 'children'),
-#               Input('model1dia', 'n_clicks'),
-#               Input('model2dia', 'n_clicks'))
-# def parse_contents(mod1dia, mod2dia):
-#     global current_model_diarization
-#     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-#     if 'model1dia' in changed_id:
-#         current_model_diarization = 'Diarization iteration 02, trained on 01/21/22'
-#     elif 'model2dia' in changed_id:
-#         current_model_diarization = 'Diarization iteration 03, trained on 02/02/22'
-#
-#     return html.Div([
-#         html.H5(f"Current Diarization Model: {current_model_diarization}"),
-#     ])
-
-
-
-# @app.callback(Output('true-dtrain', 'children'),
-#               Input('diary-train', 'n_clicks'))
-# def TrainDiary(clicks):
-#     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-#     if 'diary-train' in changed_id:
-#         x = 2
-        # try:
-        #     # SET GLOBALS TO USE IN TRIGGER
-        #
-        #
-        #     dia_pipeline = SpeakerDiaImplement()
-        #     dia_pipeline.AddPipeline(model_name=f"assets/saved_model/{value}/seg_model.ckpt",
-        #                              parameter_name=f"assets/saved_model/{value}/hyper_parameter.json")
-        #     old, new, new_model_name = dia_pipeline.TrainData(f'TrainingData/{filenames[0][32:-4]}')
-        #     # old, new, new_model_name = dia_pipeline.TrainData('TrainingData/SampleData')
-        #
-        #     global new_diary_model
-        #     new_diary_model = new_model_name
-        #     # os.mkdir(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}')
-        #     # open(f'PyannoteProj/data_preparation/saved_models/MyModel{clicks}/{filename}', 'w')
-        #     return html.Div([
-        #         html.H5(
-        #             f'The Diarization Error Rate was {old} and it is {new} right now. Model Saved as "{new_model_name}"!'),
-        #         dcc.Input(id="diary-input", type="text", placeholder="Name the new model", n_submit=0),
-        #         html.Div(children=[], id='input-processor')
-        #     ])
-        # except Exception as e:
-        #     print(e)
-        #     return html.Div([
-        #         'There was an error processing this folder.'])
-        # get model and training data, call train
-# @app.callback(
-#     [Output("progress_bar", "value")],
-#     [Input("clock", "n_intervals")])
-# def progress_bar_update(n):
-#     global progress_memory
-#     if not progress_queue.empty():
-#         progress_bar_val = progress_queue.get()
-#         progress_memory = progress_bar_val
-#     else:
-#         progress_bar_val = progress_memory
-#     return (progress_bar_val,)
-#
-#
-# @app.callback([
-#     Output("start_work", "n_clicks")],
-#     [Input("start_work", "n_clicks")])
-# def start_bar(n):
-#     if n == 0:
-#         return (0,)
-#     threading.Thread(target=start_work,
-#                      args=(progress_queue, base_model_string, data_file, output_dir, num_epochs)).start()
-#     return (0,)
-
-# @app.callback(Output('speech-output', 'children'),
-#               Input('start_work', 'n_clicks'))
-# def start_work(licks):
-#     time.sleep(60)
-# .
-#     return (None)
-#
+    ]), model, selected

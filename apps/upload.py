@@ -17,6 +17,7 @@ english = "facebook/wav2vec2-large-960h-lv60-self"
 jacob = "caurdy/wav2vec2-large-960h-lv60-self_MIDIARIES_72H_FT"
 # current = english
 current = jacob
+audio_json = ""
 
 timeAligner = ASRTimeAligner(asrModel=current,
                              diarizationModelPath="PyannoteProj/data_preparation/saved_model/model_03_25_2022_10_38_52",
@@ -102,6 +103,8 @@ def display_output(list_of_contents, n_clicks, audio_clicks, list_of_names, list
         click = click or {'clicks': 0}
         click['clicks'] = click['clicks'] + 1
         data.append(transcript)
+        global audio_json
+        audio_json = transcript[1]
         return data, click, layout
 
     elif list_of_contents is not None:
@@ -138,6 +141,8 @@ def parse_contents(contents, filename, date, cnt, store):
                                  f"Average ASR Confidence: {str(round(avg_conf * 100, 2))}%",
                                  len(store)))
                 store.append(archive)
+                global audio_json
+                audio_json = archive[1]
 
                 return store, html.Div([
                     html.H5(filename),
@@ -187,15 +192,17 @@ def parse_contents(contents, filename, date, cnt, store):
     prevent_initial_callback=True
 )
 def thePunctuator(clicks):
-    if clicks > 0:
-
-        #transcripts, punc_time, ner_time = timeAligner.getEntitiesLastTranscript()
-        with open('../assets/AbbottCostelloWhosonFirst.json') as jsonFile:
+    changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+    if clicks > 0 and 'thepunctuator' in changed_id:
+        global audio_json
+        file = audio_json
+        transcripts, punc_time, ner_time = timeAligner.getEntitiesLastTranscript()
+        with open(f'{file}') as jsonFile:
             transcripts = json.load(jsonFile)
 
         return html.Div([
-            #html.Div('Named Entity Recognition Time: ' + str(round(ner_time, 3)) + " seconds"),
-            #html.Div("Punctuation Restoration Time: " + str(round(punc_time, 3)) + " seconds"),
+            html.Div('Named Entity Recognition Time: ' + str(round(ner_time, 3)) + " seconds"),
+            html.Div("Punctuation Restoration Time: " + str(round(punc_time, 3)) + " seconds"),
             dash_table.DataTable(
                 transcripts,
                 [{'name': i, 'id': i} for i in transcripts[0].keys()],

@@ -138,7 +138,6 @@ class Wav2Vec2ASR:
             num_train_epochs=num_epochs,
             gradient_checkpointing=True,
             gradient_accumulation_steps=1,
-            fp16=True,
             save_steps=100,
             eval_steps=50,
             logging_steps=100,
