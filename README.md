@@ -1,6 +1,11 @@
 # MSULinguisticsCapstone #
 An open source Automatic Speech Recognition + Time Alignment software for translating .wav files into formatted text files for linguistics research.
 
+## Results ##
+
+ASR Model:
+https://huggingface.co/caurdy/wav2vec2-large-960h-lv60-self_MIDIARIES_72H_FT
+
 ## Installation ##
 ### Conda Environment ###
 
