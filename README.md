@@ -2,6 +2,8 @@
 An open source Automatic Speech Recognition + Time Alignment software for translating .wav files into formatted text files for linguistics research.
 
 ## Results ##
+http://www.capstone.cse.msu.edu/2022-01/design-day/awards/
+http://www.capstone.cse.msu.edu/2022-01/projects/michigan-state-university-linguistics/
 
 ASR Model:
 https://huggingface.co/caurdy/wav2vec2-large-960h-lv60-self_MIDIARIES_72H_FT
